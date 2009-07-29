@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<resources>
+    <style name="CheckOverlay">
+        <item name="emblem">@drawable/pluto_default_marker</item>
+        <item name="position">bottomRight</item>
+        <item name="offsetX">3dp</item>
+        <item name="offsetY">3dp</item>
+    </style>
+    <style name="PreviewBarTitle">
+        <item name="android:textAppearance">@android:style/TextAppearance.Inverse</item>
+    </style>
+    <style name="PreviewBarTitle.Large">
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">#ff000000</item>
+    </style>
+    <style name="PreviewBarTitle.Small">
+        <item name="android:textStyle">normal</item>
+        <item name="android:textColor">#ff444444</item>
+    </style>
+
+    <style name="TextAppearance" />
+    <style name="TextAppearance.WindowTitle">
+        <item name="android:textColor">#fff</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="TextAppearance.ListTitle">
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">20sp</item>
+    </style>
+    <style name="TextAppearance.ListDesc">
+        <item name="android:textSize">12sp</item>
+    </style>
+</resources>

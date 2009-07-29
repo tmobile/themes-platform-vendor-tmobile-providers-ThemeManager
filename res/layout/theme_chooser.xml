@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+
+    <com.tmobile.widget.HeaderButton
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/preview_header"
+        android:headerText="@string/set_theme"
+        android:buttonText="@string/btn_apply" />
+
+    <com.tmobile.widget.Filmstrip
+        android:id="@+id/filmstrip"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        />
+
+    <FrameLayout
+        android:layout_width="fill_parent"
+        android:layout_weight="1"
+        android:layout_height="0px">
+
+        <!-- Used only when the cache is not found. -->
+        <com.tmobile.thememanager.widget.PreviewContentStub
+            android:id="@+id/preview_content_stub"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout="@layout/preview"
+            />
+
+        <!-- We cache the preview area and usually draw it as a bitmap. -->
+        <ImageView
+            android:id="@+id/preview_image"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:scaleType="fitXY"
+            />
+
+    </FrameLayout>
+
+</LinearLayout>

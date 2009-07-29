@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<resources>
+    <declare-styleable name="EmblemOverlay">
+        <attr name="emblem" format="reference" />
+        <attr name="position">
+            <enum name="topLeft" value="0" />
+            <enum name="topRight" value="1" />
+            <enum name="bottomLeft" value="2" />
+            <enum name="bottomRight" value="3" />
+        </attr>
+        <attr name="offsetX" format="dimension" />
+        <attr name="offsetY" format="dimension" />
+    </declare-styleable>
+</resources>
