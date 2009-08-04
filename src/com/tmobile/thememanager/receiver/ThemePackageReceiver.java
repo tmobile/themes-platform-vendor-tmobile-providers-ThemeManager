@@ -40,7 +40,16 @@ public class ThemePackageReceiver extends BroadcastReceiver {
                 Log.d(ThemeManager.TAG, "Handling intent=" + intent);
             }
 
-            if (action.equals(Intent.ACTION_PACKAGE_ADDED)) {
+            boolean isReplacing = intent.getExtras().getBoolean(Intent.EXTRA_REPLACING);
+
+            if (isReplacing) {
+                if (action.equals(Intent.ACTION_PACKAGE_ADDED)) {
+                    boolean updateConfiguration = deleteThemeResources(context, pkg, true);
+                    addThemeResources(context, pkg);
+                    PackageResourcesProvider.getResourcesForTheme(context, pkg);
+                    updateConfig(context, pkg, updateConfiguration);
+                }
+            } else if (action.equals(Intent.ACTION_PACKAGE_ADDED)) {
                 boolean updateConfiguration = false;
                 synchronized(lock) {
                     if (ThemeManager.DEBUG && removedPackageName != null && removedPackageName.equals(pkg)) {
@@ -66,11 +75,6 @@ public class ThemePackageReceiver extends BroadcastReceiver {
                         }
                     });
                 }
-            } else if (action.equals(Intent.ACTION_THEME_PACKAGE_UPDATED)) {
-                boolean updateConfiguration = deleteThemeResources(context, pkg, true);
-                addThemeResources(context, pkg);
-                PackageResourcesProvider.getResourcesForTheme(context, pkg);
-                updateConfig(context, pkg, updateConfiguration);
             }
         } catch (NameNotFoundException e) {
             if (ThemeManager.DEBUG) {
