@@ -132,7 +132,8 @@ public class DeltaThemeGenerator {
                 dir.getPath() + "/resources.res",
                 "-f",
         };
-        int result = Aapt.invokeAapt(args);
+        /* Functionality removed during rebase project onto android-1.5r2. */
+        int result = 1; // Aapt.invokeAapt(args);
         if (result != 0) {
             throw new RuntimeException("Creation of resource bundle failed!");
         }

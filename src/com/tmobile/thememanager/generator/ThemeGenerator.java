@@ -1,34 +1,44 @@
 package com.tmobile.thememanager.generator;
 
-import android.os.Environment;
-import android.os.FileUtils;
-import android.os.Handler;
-import android.os.AsyncTask;
-import android.content.Context;
-import android.content.res.Aapt;
-import android.content.res.AssetManager;
-import android.content.res.Resources;
-import android.content.pm.*;
-import android.content.pm.PackageManager.NameNotFoundException;
-import android.widget.Toast;
-import android.app.Activity;
-import android.net.Uri;
-import android.util.Log;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-
-import java.io.*;
-import java.util.List;
-
-import com.android.internal.apkbuilder.ApkBuilder;
 import com.tmobile.thememanager.R;
 import com.tmobile.thememanager.ThemeManager;
+import com.tmobile.thememanager.activity.CustomizeColor;
+import com.tmobile.thememanager.activity.Customize.Customizations;
+import com.tmobile.thememanager.delta_themes.DeltaThemeGenerator;
+import com.tmobile.thememanager.provider.PackageResourcesProvider;
 import com.tmobile.thememanager.utils.FileUtilities;
 import com.tmobile.thememanager.utils.IOUtilities;
 import com.tmobile.thememanager.widget.ThemeAdapter.ThemeItem;
-import com.tmobile.thememanager.activity.CustomizeColor;
-import com.tmobile.thememanager.activity.Customize.Customizations;
-import com.tmobile.thememanager.provider.PackageResourcesProvider;
+
+import android.app.Activity;
+import android.content.Context;
+import android.content.pm.BaseThemeInfo;
+import android.content.pm.IPackageInstallObserver;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.AssetManager;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Environment;
+import android.os.FileUtils;
+import android.os.Handler;
+import android.util.Log;
+import android.widget.Toast;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Writer;
+import java.util.List;
 
 /**
  * @deprecated
@@ -426,7 +436,8 @@ public final class ThemeGenerator extends AsyncTask<ThemeGenerator.ThemeGenerati
                 "-F",
                 themeRootPath + "dummy.res",
             };
-        int result = Aapt.invokeAapt(args);
+        /* Functionality removed during rebase project onto android-1.5r2. */        
+        int result = 1; // Aapt.invokeAapt(args);
         if (result != 0) {
             throw new RuntimeException("Creation of resource bundle failed!");
         }
@@ -444,14 +455,15 @@ public final class ThemeGenerator extends AsyncTask<ThemeGenerator.ThemeGenerati
         FileUtils.copyToFile(is, keyStore);
         is.close();
 
-        ApkBuilder apBuilder = new ApkBuilder();
-        apBuilder.run(new String [] {
-                getDummyThemePath(),
-                "-z",
-                themeRootPath + "dummy.res",
-                "-storepath",
-                themeRootPath + "approved.bks",
-        });
+        /* Functionality removed during rebase project onto android-1.5r2. */
+//        ApkBuilder apBuilder = new ApkBuilder();
+//        apBuilder.run(new String [] {
+//                getDummyThemePath(),
+//                "-z",
+//                themeRootPath + "dummy.res",
+//                "-storepath",
+//                themeRootPath + "approved.bks",
+//        });
         // Make sure the .apk file is readable by others
         FileUtils.setPermissions(getDummyThemePath(), 0644, -1, -1);
     }
