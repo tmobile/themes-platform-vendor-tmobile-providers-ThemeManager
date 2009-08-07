@@ -19,6 +19,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
+import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -232,7 +233,7 @@ public class Customize extends Activity {
                 if (resultCode == RESULT_OK) {
                     Bundle extras = data.getExtras();
                     Uri uri = extras.getParcelable(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
-                    String name = extras.getString(RingtoneManager.EXTRA_RINGTONE_TITLE);
+                    String name = RingtoneManager.getRingtone(this, uri).getTitle(this);
                     
                     if (requestCode == CUSTOMIZE_SOUND_RINGTONE_MSG) {
                         mCustomizations.setRingtone(uri, name);
