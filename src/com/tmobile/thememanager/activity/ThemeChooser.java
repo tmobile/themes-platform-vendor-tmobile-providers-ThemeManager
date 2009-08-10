@@ -148,10 +148,8 @@ public class ThemeChooser extends Activity {
         return (ThemeItem)mFilmstrip.getSelectedItem();
     }
 
-/** A fix for THEMES-104: disable Customize flow
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the currently selected menu XML resource.
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.theme, menu);
 
@@ -160,18 +158,7 @@ public class ThemeChooser extends Activity {
     
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        MenuItem revertItem = menu.findItem(R.id.revert);
         MenuItem deleteItem = menu.findItem(R.id.delete);
-        
-        // Only customized themes can be reverted to original.
-        if (revertItem != null) {
-            ThemeItem selected = getSelectedThemeItem();
-            if (selected == null || selected.type != ThemeItem.TYPE_DIFF) {
-                revertItem.setVisible(false);
-            } else {
-                revertItem.setVisible(true);
-            }
-        }
         
         // Only third-party themes can be deleted.
         if (deleteItem != null) {
@@ -189,14 +176,6 @@ public class ThemeChooser extends Activity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.customize:
-                Customize.show(this, getSelectedThemeItem(), THEME_CUSTOMIZE_MSG);
-                return true;
-
-            case R.id.revert:
-                showDialog(REVERT_DIALOG);
-                return true;
-
             case R.id.delete:
                 showDialog(DELETE_DIALOG);
                 return true;
@@ -226,36 +205,6 @@ public class ThemeChooser extends Activity {
     @Override
     protected Dialog onCreateDialog(int id) {
         switch (id) {
-            case REVERT_DIALOG:
-                return new AlertDialog.Builder(ThemeChooser.this)
-//                  .setIcon(R.drawable.revert_dialog_icon) // TODO: Need the dialog icon
-                    .setTitle(R.string.revert_dialog_title)
-                    .setMessage(R.string.revert_dialog_message)
-                    .setPositiveButton(R.string.btn_yes, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int whichButton) {
-                            ThemeItem theme = getSelectedThemeItem();
-                            int selectedPos = mFilmstrip.getSelectedItemPosition();
-                            if (theme.hasParentTheme()) {
-                                theme = mAdapter.revertToOriginal(selectedPos, theme);
-                                if (theme != null) {
-                                    previewTheme(selectedPos);
-                                    if (selectedPos == mAdapter.getAppliedPosition()) {
-                                        applyTheme();
-                                    }
-                                } else {
-                                    Log.e(ThemeManager.TAG, "Failed to find diff theme");
-                                }
-                            } else {
-                                Log.e(ThemeManager.TAG, "Not a diff theme");
-                            }
-                        }
-                    })
-                    .setNegativeButton(R.string.btn_cancel, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int whichButton) {
-                        }
-                    })
-                    .create();
-
             case DELETE_DIALOG:
                 return new AlertDialog.Builder(ThemeChooser.this)
 //                  .setIcon(R.drawable.delete_dialog_icon) // TODO: Need the dialog icon
@@ -263,16 +212,11 @@ public class ThemeChooser extends Activity {
                     .setMessage(R.string.delete_dialog_message)
                     .setPositiveButton(R.string.btn_yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
-                            ThemeItem selected = getSelectedThemeItem();
-                            if (!selected.hasParentTheme()) {
-                                int oldSelection = mFilmstrip.getSelectedItemPosition();
-                                int newSelection = mAdapter.deleteThemeItem(oldSelection);
-                                mAdapter.setAppliedPosition(newSelection);
-                                updateConfiguration(mAdapter.getTheme(newSelection));
-                                finish();
-                            } else {
-                                Log.e(ThemeManager.TAG, "Must be not a diff theme");
-                            }
+                            int oldSelection = mFilmstrip.getSelectedItemPosition();
+                            int newSelection = mAdapter.deleteThemeItem(oldSelection);
+                            mAdapter.setAppliedPosition(newSelection);
+                            updateConfiguration(mAdapter.getTheme(newSelection));
+                            finish();
                         }
                     })
                     .setNegativeButton(R.string.btn_cancel, new DialogInterface.OnClickListener() {
@@ -299,7 +243,6 @@ public class ThemeChooser extends Activity {
         }
         return null;
     }
-*/
 
     private class ThumbnailAdapter extends ThemeAdapter {
         private int mAppliedPos = -1;
