@@ -2,10 +2,6 @@ package com.tmobile.thememanager.activity;
 
 import com.tmobile.thememanager.R;
 import com.tmobile.thememanager.ThemeManager;
-import com.tmobile.thememanager.activity.Customize.Customizations;
-import com.tmobile.thememanager.delta_themes.DeltaThemeGenerator;
-import com.tmobile.thememanager.delta_themes.DeltaThemeInfo;
-import com.tmobile.thememanager.delta_themes.DeltaThemesStore;
 import com.tmobile.thememanager.provider.PackageResources;
 import com.tmobile.thememanager.provider.PackageResourcesProvider;
 import com.tmobile.thememanager.utils.BitmapStore;
@@ -59,9 +55,6 @@ import java.io.InputStream;
 
 public class ThemeChooser extends Activity {
 
-    public static final int THEME_CUSTOMIZE_MSG = 1;
-
-    private static final int REVERT_DIALOG = 1;
     private static final int DELETE_DIALOG = 2;
     private static final int APPLY_DEFAULT_THEME_DIALOG = 3;
 
@@ -298,33 +291,18 @@ public class ThemeChooser extends Activity {
             image = (ThumbnailedBitmapView)emblem.getWrappedView();
             ThemeItem item = getTheme(position);
 
-            /* If the diff theme provides a wallpaper, we need to show it here.
-             * Otherwise, fall back to the parent theme's thumbnail. */
-            if (item.type == ThemeItem.TYPE_DIFF &&
-                    item.delta.getWallpaperUri() != null) {
-                WallpaperThumbnailCache cache =
-                    new WallpaperThumbnailCache(ThemeChooser.this, item.getPackageName(),
-                            item.getWallpaperUri(ThemeChooser.this));
-                image.setImageStore(cache, null, item.getWallpaperIdentifier() + "-small");
-            } else {
-                ThemeItem thumbnailTheme;
-                if (item.type == ThemeItem.TYPE_DIFF) {
-                    thumbnailTheme = item.getParentTheme();
-                } else {
-                    thumbnailTheme = item;
-                }
+            ThemeItem thumbnailTheme = item;
 
-                try {
-                    Resources r = PackageResourcesProvider.getResourcesForTheme(ThemeChooser.this,
-                            thumbnailTheme.getPackageName());
+            try {
+                Resources r = PackageResourcesProvider.getResourcesForTheme(ThemeChooser.this,
+                        thumbnailTheme.getPackageName());
 
-                    Drawable d = r.getDrawable(thumbnailTheme.info.thumbnail);
-                    d.setDither(true);
-                    image.setImageDrawable(d);
-                } catch (NameNotFoundException e) {
-                    Log.e(ThemeManager.TAG, "Unable to retrieve theme thumbnail for theme: " + 
-                            thumbnailTheme);
-                }
+                Drawable d = r.getDrawable(thumbnailTheme.info.thumbnail);
+                d.setDither(true);
+                image.setImageDrawable(d);
+            } catch (NameNotFoundException e) {
+                Log.e(ThemeManager.TAG, "Unable to retrieve theme thumbnail for theme: " + 
+                        thumbnailTheme);
             }
             
             emblem.setChecked(mAppliedPos == position);
@@ -482,42 +460,6 @@ public class ThemeChooser extends Activity {
         context.startActivity(i);
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        switch (requestCode) {
-            case THEME_CUSTOMIZE_MSG:
-                if (resultCode == RESULT_OK) {
-                    Bundle extras = data.getExtras();
-                    ThemeItem baseTheme = extras.getParcelable(ThemeManager.EXTRA_THEME_ITEM);
-                    Customizations changes = extras.getParcelable(Customize.EXTRA_CUSTOMIZATIONS);
-                    
-                    DeltaThemeInfo delta = DeltaThemeGenerator.createDeltaThemeInfo(this,
-                            baseTheme, changes);
-                    
-                    DeltaThemesStore.getDeltaThemesStore().persist(delta);
-                    
-                    int position = mAdapter.putDeltaTheme(delta);
-                    
-                    /* Make sure we delete the preview cache to both save
-                     * storage space and to prevent uniqueness issues if a diff
-                     * theme is modified a second time (the unique theme id
-                     * would remain the same, and thus the cache must be
-                     * invalidated). */
-                    BitmapStore store = mAdapter.getBitmapStore(position);
-                    if (store != null) {
-                        store.clear();
-                    }
-                    
-                    if (position == mAdapter.getAppliedPosition()) {
-                        applyTheme();
-                    } else {
-                        previewTheme(position);
-                    }
-                }
-                break;
-        }
-    }
-
     private void applyTemporaryTheming() {
         applyTemporaryTheming(this, getSelectedThemeItem());
     }
@@ -532,13 +474,7 @@ public class ThemeChooser extends Activity {
         }
 
         if (pkg != null) {
-            String path = null;
-            int parentThemeId = -1;
-            if (theme.hasParentTheme()) {
-                path = theme.delta.getResourceBundlePath();
-                parentThemeId = theme.getParentTheme().getResourceId();
-            }
-            context.useThemedResources(pkg, path, parentThemeId);
+            context.useThemedResources(pkg);
         }
 
         context.setTheme(resId);
@@ -587,25 +523,12 @@ public class ThemeChooser extends Activity {
 //            currentConfig.customTheme = CustomTheme.getDefault();
 //        } else {
             /* Set the runtime user-provided theme. */
-            boolean hasParent = theme.hasParentTheme();
             currentConfig.customTheme = new CustomTheme(
-                    hasParent? theme.delta.getParentThemeId() : theme.getThemeId(),
-                    theme.getPackageName(),
-                    hasParent);
-            if (theme.hasParentTheme()) {
-                currentConfig.customTheme.setForceUpdate(true);
-                String resourceBundlePath = theme.delta.getResourceBundlePath();
-                if (resourceBundlePath != null) {
-                    currentConfig.customTheme.setThemeResourcePath(resourceBundlePath);
-                }
-            }
+                    theme.getThemeId(),
+                    theme.getPackageName());
 //        }
 
         mAM.updateConfiguration(currentConfig);
-
-        if (hasParent) {
-            currentConfig.customTheme.setForceUpdate(false);
-        }
     }
 
     private void setWallpaper(Uri uri) {
@@ -652,7 +575,6 @@ public class ThemeChooser extends Activity {
             if (action.equals(Intent.ACTION_PACKAGE_REMOVED) == true) {
                 mAdapter.removeThemesByPackage(pkg);
                 selectAppliedTheme(false);
-                DeltaThemesStore.getDeltaThemesStore().deleteThemesForPackage(pkg);
             } else if (action.equals(Intent.ACTION_PACKAGE_ADDED) == true) {
                 try {
                     mAdapter.addThemesFromPackage(getPackageManager().getPackageInfo(pkg, 0));

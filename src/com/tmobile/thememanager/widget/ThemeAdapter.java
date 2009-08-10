@@ -20,8 +20,6 @@ import android.text.TextUtils;
 import java.util.*;
 
 import com.tmobile.thememanager.ThemeManager;
-import com.tmobile.thememanager.delta_themes.DeltaThemeInfo;
-import com.tmobile.thememanager.delta_themes.DeltaThemesStore;
 import com.tmobile.thememanager.provider.PackageResources;
 import com.tmobile.thememanager.utils.IOUtilities;
 
@@ -149,38 +147,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
         }
     }
 
-    public int putDeltaTheme(DeltaThemeInfo delta) {
-        for (int i = 0; i < mThemes.size(); i++) {
-            ThemeItem item = mThemes.get(i);
-            if ((!item.hasParentTheme() && item.getThemeId().equals(delta.getParentThemeId()) &&
-                  item.getPackageName().equals(delta.getPackageName())) ||
-                (item.hasParentTheme() && item.delta.getParentThemeId().equals(delta.getParentThemeId()) &&
-                item.delta.getPackageName().equals(delta.getPackageName()))) {
-                ThemeItem parent;
-                if (item.hasParentTheme()) {
-                    parent = item.getParentTheme();
-                } else {
-                    parent = item;
-                }
-                mThemes.remove(i);
-                mThemes.add(i, new ThemeItem(delta, parent));
-                notifyDataSetChanged();
-                return i;
-            }
-        }
-        Log.e("ThemeAdapter", "Can't find parent theme for delta theme");
-        return -1;
-    }
-
-    public ThemeItem revertToOriginal(int pos, ThemeItem theme) {
-        DeltaThemesStore.getDeltaThemesStore().deleteTheme(theme.delta);
-        ThemeItem parent = theme.getParentTheme();
-        mThemes.remove(pos);
-        mThemes.add(pos, parent);
-        notifyDataSetChanged();
-        return parent;
-    }
-
     private void loadThemes() {
         mThemes.clear();
 
@@ -209,29 +175,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
                 }
             } finally {
                 c.close();
-            }
-        }
-        List<DeltaThemeInfo> deltaThemes =
-            DeltaThemesStore.getDeltaThemesStore().getInstalledDeltaThemes();
-        if (deltaThemes != null) {
-            for (DeltaThemeInfo delta: deltaThemes) {
-                String packageName = delta.getPackageName();
-                if (!map.containsKey(packageName)) {
-                    Log.e("ThemeAdapter", "Can't find parent theme for delta theme");
-                    continue;
-                }
-                for (int i = map.get(packageName); i < mThemes.size(); i++) {
-                    ThemeItem item = mThemes.get(i);
-                    if (!item.getPackageName().equals(packageName)) {
-                        Log.e("ThemeAdapter", "Can't find parent theme for delta theme");
-                        break;
-                    }
-                    if (!item.hasParentTheme() && item.getThemeId().equals(delta.getParentThemeId())) {
-                        mThemes.remove(i);
-                        mThemes.add(i, new ThemeItem(delta, item));
-                        break;
-                    }
-                }
             }
         }
         notifyDataSetChanged();
@@ -314,14 +257,12 @@ public abstract class ThemeAdapter extends BaseAdapter {
     public static class ThemeItem implements Parcelable {
         public static final int TYPE_SYSTEM = 0;
         public static final int TYPE_USER = 1;
-        public static final int TYPE_DIFF = 2;
-        public static final int TYPE_PURCHASE = 3;
+        public static final int TYPE_PURCHASE = 2;
 
         public int type;
 
         public PackageInfo packageInfo;
         public BaseThemeInfo info;
-        public DeltaThemeInfo delta;
         private ThemeItem parent;
 
         String name;
@@ -329,12 +270,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
         int resId;
 
         protected ThemeItem() {
-        }
-
-        public ThemeItem(DeltaThemeInfo delta, ThemeItem parent) {
-            this.type = TYPE_DIFF;
-            this.delta = delta;
-            this.parent = parent;
         }
 
         // TODO: we need costructor for TYPE_PURCHASE as well
@@ -358,7 +293,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
             dest.writeInt(resId);
             IOUtilities.writeParcelableToParcel(dest, packageInfo, 0);
             IOUtilities.writeParcelableToParcel(dest, info, 0);
-            IOUtilities.writeParcelableToParcel(dest, delta, 0);
             IOUtilities.writeParcelableToParcel(dest, parent, 0);
         }
         
@@ -375,8 +309,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
                         PackageInfo.CREATOR);
                 item.info = IOUtilities.readParcelableFromParcel(source,
                         BaseThemeInfo.CREATOR);
-                item.delta = IOUtilities.readParcelableFromParcel(source,
-                        DeltaThemeInfo.CREATOR);
                 item.parent = IOUtilities.readParcelableFromParcel(source,
                         ThemeItem.CREATOR);
                 
@@ -400,9 +332,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
                 case TYPE_USER:
                 case TYPE_PURCHASE:
                     return info.name;
-
-                case TYPE_DIFF:
-                    return delta.getName();
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -416,9 +345,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
                 case TYPE_USER:
                 case TYPE_PURCHASE:
                     return info.author;
-
-                case TYPE_DIFF:
-                    return delta.getAuthor();
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -432,9 +358,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
                 case TYPE_USER:
                 case TYPE_PURCHASE:
                     return info.isDrmProtected;
-
-                case TYPE_DIFF:
-                    return delta.isDrmProtected();
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return true;
@@ -448,9 +371,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
                 case TYPE_USER:
                 case TYPE_PURCHASE:
                     return info.styleResourceId;
-
-                case TYPE_DIFF:
-                    return delta.getStyleId();
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return -1;
@@ -464,9 +384,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
                 case TYPE_USER:
                 case TYPE_PURCHASE:
                     return info.themeId;
-
-                case TYPE_DIFF:
-                    return delta.getThemeId();
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -480,26 +397,11 @@ public abstract class ThemeAdapter extends BaseAdapter {
                 case TYPE_USER:
                 case TYPE_PURCHASE:
                     return packageInfo.packageName;
-
-                case TYPE_DIFF:
-                    return delta.getPackageName();
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
         }
         
-        public boolean hasParentTheme() {
-            return type == TYPE_DIFF;
-        }
-        
-        public ThemeItem getParentTheme() {
-            if (type == TYPE_DIFF) {
-                return parent;
-            } else {
-                return null;
-            }
-        }
-
         /**
          * Requests a unique identifier for a wallpaper. Useful to distinguish
          * different wallpaper items contained in a single theme package. Though
@@ -515,13 +417,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
                 case TYPE_USER:
                 case TYPE_PURCHASE:
                     return info.wallpaperImageName;
-                    
-                case TYPE_DIFF:
-                    String name = delta.getWallpaperName();
-                    if (name == null) {
-                        name = parent.getWallpaperIdentifier();
-                    }
-                    return name;
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -539,14 +434,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
                     } else {
                         return PackageResources.getImageUri(context, getPackageName(),
                                 info.wallpaperImageName);
-                    }
-                    
-                case TYPE_DIFF:
-                    Uri uri = delta.getWallpaperUri();
-                    if (uri != null) {
-                        return uri;
-                    } else {
-                        return parent.getWallpaperUri(context);
                     }
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
@@ -566,14 +453,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
                         return PackageResources.getRingtoneUri(context, getPackageName(),
                                 info.ringtoneFileName);
                     }
-                    
-                case TYPE_DIFF:
-                    Uri uri = delta.getRingtoneUri();
-                    if (uri != null) {
-                        return uri;
-                    } else {
-                        return parent.getRingtoneUri(context);
-                    }
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -587,13 +466,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
                 case TYPE_USER:
                 case TYPE_PURCHASE:
                     return info.ringtoneName;
-                    
-                case TYPE_DIFF:
-                    if (delta.getRingtoneName() != null) {
-                        return delta.getRingtoneName();
-                    } else {
-                        return parent.getRingtoneName();
-                    }
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -612,14 +484,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
                         return PackageResources.getRingtoneUri(context, getPackageName(),
                                 info.notificationRingtoneFileName);
                     }
-                    
-                case TYPE_DIFF:
-                    Uri uri = delta.getRingtoneUri();
-                    if (uri != null) {
-                        return uri;
-                    } else {
-                        return parent.getRingtoneUri(context);
-                    }
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -633,23 +497,9 @@ public abstract class ThemeAdapter extends BaseAdapter {
                 case TYPE_USER:
                 case TYPE_PURCHASE:
                     return info.notificationRingtoneName;
-                    
-                case TYPE_DIFF:
-                    if (delta.getNotificationRingtoneName() != null) {
-                        return delta.getNotificationRingtoneName();
-                    } else {
-                        return parent.getNotificationRingtoneName();
-                    }
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
-        }
-
-        public String getColorPaletteName() {
-            if (type != TYPE_DIFF || delta.getColorPaletteName() == null) {
-                return getName();
-            }
-            return delta.getColorPaletteName();
         }
 
         public String getSoundPackName() {
@@ -660,13 +510,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
                 case TYPE_USER:
                 case TYPE_PURCHASE:
                     return info.soundPackName;
-
-                case TYPE_DIFF:
-                    if (delta.getSoundPackName() != null) {
-                        return delta.getSoundPackName();
-                    } else {
-                        return parent.getSoundPackName();
-                    }
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -682,21 +525,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
                         return false;
                     }
                     return theme.getThemeId().equals(getThemeId());
-
-                case TYPE_DIFF:
-                    if (theme == null || !theme.hasParentTheme()) {
-                        return false;
-                    }
-                    if (getPackageName().equals(theme.getThemePackageName()) == false) {
-                        return false;
-                    }
-                    // Custom theme specifies a delta theme (hasParent() == true).
-                    // Since themeId of the CustomTheme is the same as the themeId
-                    // of the parent, we need to append _generated to it to get
-                    // the themeId of the corresponding delta theme.
-                    StringBuffer sb = new StringBuffer(theme.getThemeId());
-                    sb.append("_generated");
-                    return sb.toString().equals(getThemeId());
 
                 case TYPE_USER:
                 case TYPE_PURCHASE:

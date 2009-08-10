@@ -47,33 +47,7 @@
     <!-- Description of an application permission, allowing access to DRM-protected media resources of theme packages. -->
     <string name="permdesc_access_DrmThemeResources">Allows an application read access to DRM-protected media resources of Theme Packages</string>
 
-    <string name="customize_theme">Customize</string>
-    <string name="revert_theme">Revert to original</string>
     <string name="delete_theme">Delete theme</string>
-    <string name="buy_themes">Buy themes</string>
-
-    <string name="title_wallpaper_effects">Wallpaper effects</string>
-    <string name="title_sound">Sound</string>
-    <string name="title_color">Color</string>
-    <string name="title_font">Font</string>
-    <string name="title_motion">Motion</string>
-
-    <string name="summary_no_customization">None</string>
-    <string name="summary_default_customization">Default</string>
-
-    <string name="wpeffect_none">None</string>
-    <string name="wpeffect_bw">Black and White</string>
-    <string name="wpeffect_sepia">Sepia</string>
-    <string name="wpeffect_duotone">Duotone</string>
-    <string name="wpeffect_desaturate">Faded Colors</string>
-    <string name="wpeffect_recol">Recolor</string>
-    <string name="KEY_WallPaperEffect">wallpaperEffect</string>
-
-    <string name="save_dialog_title">Save changes</string>
-    <string name="save_dialog_message">Do you want to save changes?</string>
-
-    <string name="revert_dialog_title">Revert to original</string>
-    <string name="revert_dialog_message">This will restore your original theme and you will loose any modification you did to this theme.</string>
 
     <string name="delete_dialog_title">Delete</string>
     <string name="delete_dialog_message">This theme is currently applied. Deleting this theme will return the original T-Mobile theme.</string>

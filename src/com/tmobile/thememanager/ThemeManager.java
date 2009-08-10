@@ -6,7 +6,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import java.util.*;
 
-import com.tmobile.thememanager.delta_themes.DeltaThemesStore;
 import com.tmobile.thememanager.widget.ThemeAdapter;
 
 public class ThemeManager extends Application {
@@ -29,7 +28,6 @@ public class ThemeManager extends Application {
     public void onCreate() {
         super.onCreate();
         _installedThemePackages.clear();
-        DeltaThemesStore.createDeltaThemesStore(this);
         _themesDatabaseHelper = ThemeAdapter.createThemeItemDbHelper(this);
 
     }
