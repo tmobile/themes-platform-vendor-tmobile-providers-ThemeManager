@@ -153,17 +153,14 @@ public class ThemeChooser extends Activity {
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem deleteItem = menu.findItem(R.id.delete);
         
-        // Only third-party themes can be deleted.
-        if (deleteItem != null) {
-            ThemeItem selected = getSelectedThemeItem();
-            if (selected == null || selected.type != ThemeItem.TYPE_PURCHASE) {
-                deleteItem.setVisible(false);
-            } else {
-                deleteItem.setVisible(true);
-            }
+        ThemeItem selected = getSelectedThemeItem();
+        if (selected == null || selected.isRemovable() == false) {
+            deleteItem.setVisible(false);
+            return false;
+        } else {
+            deleteItem.setVisible(true);
+            return true;
         }
-        
-        return true;
     }
 
     @Override
@@ -199,17 +196,19 @@ public class ThemeChooser extends Activity {
     protected Dialog onCreateDialog(int id) {
         switch (id) {
             case DELETE_DIALOG:
+                int messageId;
+                if (mFilmstrip.getSelectedItemPosition() == mAdapter.getAppliedPosition()) {
+                    messageId = R.string.delete_dialog_message_if_applied;
+                } else {
+                    messageId = R.string.delete_dialog_message;
+                }
                 return new AlertDialog.Builder(ThemeChooser.this)
 //                  .setIcon(R.drawable.delete_dialog_icon) // TODO: Need the dialog icon
                     .setTitle(R.string.delete_dialog_title)
-                    .setMessage(R.string.delete_dialog_message)
+                    .setMessage(messageId)
                     .setPositiveButton(R.string.btn_yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
-                            int oldSelection = mFilmstrip.getSelectedItemPosition();
-                            int newSelection = mAdapter.deleteThemeItem(oldSelection);
-                            mAdapter.setAppliedPosition(newSelection);
-                            updateConfiguration(mAdapter.getTheme(newSelection));
-                            finish();
+                            deleteTheme();
                         }
                     })
                     .setNegativeButton(R.string.btn_cancel, new DialogInterface.OnClickListener() {
@@ -482,6 +481,24 @@ public class ThemeChooser extends Activity {
 
     /* package */ static void revertTemporaryTheming() {
         /* Nothing to do, we only affected this activity. */
+    }
+
+    private void deleteTheme() {
+        ThemeItem theme = getSelectedThemeItem();
+        deleteTheme(theme);
+    }
+
+    private void deleteTheme(ThemeItem theme) {
+        int oldSelection = mFilmstrip.getSelectedItemPosition();
+        boolean resetToDefault = (oldSelection == mAdapter.getAppliedPosition());
+
+        int defaultPos = mAdapter.deleteThemeItem(oldSelection);
+
+        if (resetToDefault) {
+            mAdapter.setAppliedPosition(defaultPos);
+            mFilmstrip.setSelection(defaultPos);
+            applyTheme(mAdapter.getTheme(defaultPos));
+        }
     }
 
     private void applyTheme() {

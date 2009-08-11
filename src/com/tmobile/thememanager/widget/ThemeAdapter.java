@@ -2,6 +2,7 @@ package com.tmobile.thememanager.widget;
 
 import android.content.Context;
 import android.content.ContentValues;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.BaseThemeInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.ThemeInfo;
@@ -255,9 +256,8 @@ public abstract class ThemeAdapter extends BaseAdapter {
     }
 
     public static class ThemeItem implements Parcelable {
-        public static final int TYPE_SYSTEM = 0;
+        public static final int TYPE_FRAMEWORK = 0;
         public static final int TYPE_USER = 1;
-        public static final int TYPE_PURCHASE = 2;
 
         public int type;
 
@@ -272,17 +272,15 @@ public abstract class ThemeAdapter extends BaseAdapter {
         protected ThemeItem() {
         }
 
-        // TODO: we need costructor for TYPE_PURCHASE as well
         public ThemeItem(PackageInfo packageInfo, BaseThemeInfo info) {
             this.type = TYPE_USER;
             this.packageInfo = packageInfo;
             this.info = info;
         }
 
-        public ThemeItem(String name, String themeId, int resId) {
-            this.type = TYPE_SYSTEM;
+        public ThemeItem(String name, int resId) {
+            this.type = TYPE_FRAMEWORK;
             this.name = name;
-            this.themeId = themeId;
             this.resId = resId;
         }
 
@@ -326,11 +324,10 @@ public abstract class ThemeAdapter extends BaseAdapter {
 
         public String getName() {
             switch (type) {
-                case TYPE_SYSTEM:
+                case TYPE_FRAMEWORK:
                     return name;
 
                 case TYPE_USER:
-                case TYPE_PURCHASE:
                     return info.name;
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
@@ -339,11 +336,10 @@ public abstract class ThemeAdapter extends BaseAdapter {
 
         public String getAuthor() {
             switch (type) {
-                case TYPE_SYSTEM:
+                case TYPE_FRAMEWORK:
                     return "T-Mobile";
 
                 case TYPE_USER:
-                case TYPE_PURCHASE:
                     return info.author;
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
@@ -352,11 +348,10 @@ public abstract class ThemeAdapter extends BaseAdapter {
 
         public boolean isDRMProtected() {
             switch (type) {
-                case TYPE_SYSTEM:
+                case TYPE_FRAMEWORK:
                     return false;
 
                 case TYPE_USER:
-                case TYPE_PURCHASE:
                     return info.isDrmProtected;
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
@@ -365,11 +360,10 @@ public abstract class ThemeAdapter extends BaseAdapter {
 
         public int getResourceId() {
             switch (type) {
-                case TYPE_SYSTEM:
+                case TYPE_FRAMEWORK:
                     return resId;
 
                 case TYPE_USER:
-                case TYPE_PURCHASE:
                     return info.styleResourceId;
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
@@ -378,11 +372,10 @@ public abstract class ThemeAdapter extends BaseAdapter {
 
         public String getThemeId() {
             switch (type) {
-                case TYPE_SYSTEM:
-                    return themeId;
+                case TYPE_FRAMEWORK:
+                    return null;
 
                 case TYPE_USER:
-                case TYPE_PURCHASE:
                     return info.themeId;
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
@@ -391,11 +384,10 @@ public abstract class ThemeAdapter extends BaseAdapter {
 
         public String getPackageName() {
             switch (type) {
-                case TYPE_SYSTEM:
+                case TYPE_FRAMEWORK:
                     return null;
 
                 case TYPE_USER:
-                case TYPE_PURCHASE:
                     return packageInfo.packageName;
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
@@ -411,11 +403,10 @@ public abstract class ThemeAdapter extends BaseAdapter {
          */
         public String getWallpaperIdentifier() {
             switch (type) {
-                case TYPE_SYSTEM:
+                case TYPE_FRAMEWORK:
                     return null;
                     
                 case TYPE_USER:
-                case TYPE_PURCHASE:
                     return info.wallpaperImageName;
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
@@ -424,11 +415,10 @@ public abstract class ThemeAdapter extends BaseAdapter {
         
         public Uri getWallpaperUri(Context context) {
             switch (type) {
-                case TYPE_SYSTEM:
+                case TYPE_FRAMEWORK:
                     return null;
                     
                 case TYPE_USER:
-                case TYPE_PURCHASE:
                     if (info.wallpaperImageName == null) {
                         return null;
                     } else {
@@ -442,11 +432,10 @@ public abstract class ThemeAdapter extends BaseAdapter {
         
         public Uri getRingtoneUri(Context context) {
             switch (type) {
-                case TYPE_SYSTEM:
+                case TYPE_FRAMEWORK:
                     return null;
                     
                 case TYPE_USER:
-                case TYPE_PURCHASE:
                     if (info.ringtoneFileName == null) {
                         return null;
                     } else {
@@ -460,11 +449,10 @@ public abstract class ThemeAdapter extends BaseAdapter {
         
         public String getRingtoneName() {
             switch (type) {
-                case TYPE_SYSTEM:
+                case TYPE_FRAMEWORK:
                     return null;
                     
                 case TYPE_USER:
-                case TYPE_PURCHASE:
                     return info.ringtoneName;
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
@@ -473,11 +461,10 @@ public abstract class ThemeAdapter extends BaseAdapter {
         
         public Uri getNotificationRingtoneUri(Context context) {
             switch (type) {
-                case TYPE_SYSTEM:
+                case TYPE_FRAMEWORK:
                     return null;
                     
                 case TYPE_USER:
-                case TYPE_PURCHASE:
                     if (info.notificationRingtoneFileName == null) {
                         return null;
                     } else {
@@ -491,11 +478,10 @@ public abstract class ThemeAdapter extends BaseAdapter {
         
         public String getNotificationRingtoneName() {
             switch (type) {
-                case TYPE_SYSTEM:
+                case TYPE_FRAMEWORK:
                     return null;
                     
                 case TYPE_USER:
-                case TYPE_PURCHASE:
                     return info.notificationRingtoneName;
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
@@ -504,30 +490,51 @@ public abstract class ThemeAdapter extends BaseAdapter {
 
         public String getSoundPackName() {
             switch (type) {
-                case TYPE_SYSTEM:
+                case TYPE_FRAMEWORK:
                     return null;
 
                 case TYPE_USER:
-                case TYPE_PURCHASE:
                     return info.soundPackName;
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
         }
 
+        /**
+         * Tests whether the theme item can be uninstalled. This condition
+         * is true for all theme APKs not part of the system image.
+         * 
+         * @return Returns true if the theme can be uninstalled.
+         */
+        public boolean isRemovable() {
+            switch (type) {
+                case TYPE_FRAMEWORK:
+                    return false;
+
+                case TYPE_USER:
+                    return (packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0;
+            }
+            Log.e(ThemeManager.TAG, "Unknown type " + type);
+            return false;
+        }
+
         public boolean equals(CustomTheme theme) {
             switch (type) {
-                case TYPE_SYSTEM:
+                case TYPE_FRAMEWORK:
                     if (theme == null) {
                         return getResourceId() == -1;
                     }
                     if (theme.getThemePackageName() != null) {
                         return false;
                     }
-                    return theme.getThemeId().equals(getThemeId());
+                    /*
+                     * TODO: This test is incomplete because the CustomTheme
+                     * object is no longer capable of expressing framework
+                     * themes.  This is a bug in CustomTheme.
+                     */
+                    return false;
 
                 case TYPE_USER:
-                case TYPE_PURCHASE:
                     if (theme == null) {
                         return false;
                     }

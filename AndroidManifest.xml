@@ -27,6 +27,9 @@
     <!-- Manage the state of theme APKs across reboots. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Allows to remove theme packages. -->
+    <uses-permission android:name="android.permission.DELETE_PACKAGES" />
+
     <application
         android:name="ThemeManager"
         android:label="@string/app_name"
