@@ -2,11 +2,8 @@ package com.tmobile.thememanager;
 
 import android.app.Application;
 import android.content.pm.BaseThemeInfo;
-import android.database.sqlite.SQLiteOpenHelper;
 
 import java.util.*;
-
-import com.tmobile.thememanager.widget.ThemeAdapter;
 
 public class ThemeManager extends Application {
     public static final String TAG = "ThemeManager";
@@ -22,13 +19,10 @@ public class ThemeManager extends Application {
 
     private static final Map<String, BaseThemeInfo> _installedThemePackages = new HashMap<String, BaseThemeInfo>();
 
-    private static SQLiteOpenHelper _themesDatabaseHelper = null;
-
     @Override
     public void onCreate() {
         super.onCreate();
         _installedThemePackages.clear();
-        _themesDatabaseHelper = ThemeAdapter.createThemeItemDbHelper(this);
 
     }
 
@@ -65,9 +59,4 @@ public class ThemeManager extends Application {
         }
         return sounds;
     }
-
-    public static SQLiteOpenHelper getThemesDatabaseHelper() {
-        return _themesDatabaseHelper;
-    }
-
 }

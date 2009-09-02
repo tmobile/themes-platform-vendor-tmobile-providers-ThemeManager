@@ -63,6 +63,9 @@
         <provider android:name=".provider.PackageResourcesProvider"
             android:authorities="com.tmobile.thememanager.packageresources" />
 
+        <provider android:name=".provider.ThemesProvider"
+            android:authorities="com.tmobile.thememanager.themes" />
+
         <receiver android:name=".receiver.BootReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

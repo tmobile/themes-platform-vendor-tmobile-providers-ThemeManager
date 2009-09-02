@@ -3,6 +3,7 @@ package com.tmobile.thememanager.provider;
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.PackageResources.ImageColumns;
 import com.tmobile.thememanager.provider.PackageResources.RingtoneColumns;
+import com.tmobile.thememanager.utils.DatabaseUtilities;
 
 import android.app.ActivityManager;
 import android.content.ContentProvider;
@@ -25,7 +26,6 @@ import android.os.Binder;
 import android.os.ParcelFileDescriptor;
 import android.os.Process;
 import android.provider.DrmStore;
-import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
@@ -174,32 +174,6 @@ public class PackageResourcesProvider extends ContentProvider
     public static final synchronized void deleteResourcesForTheme(String packageName) {
         mLookUpTable.remove(packageName);
     }
-    
-    private String appendSelection(String selection, String extra) {
-        if (TextUtils.isEmpty(extra)) {
-            throw new IllegalArgumentException("extra must be non-null and non-empty");
-        }
-        if (TextUtils.isEmpty(selection)) {
-            return extra;
-        }
-        return "(" + selection + ") AND " + extra;
-    }
-    
-    private String[] appendSelectionArgs(String[] selectionArgs, String... extra) {
-        if (extra == null || extra.length == 0) {
-            throw new IllegalArgumentException("extra must be non-null and non-empty");
-        }
-        
-        if (selectionArgs == null || selectionArgs.length == 0) {
-            return extra;
-        }
-        
-        String[] newArgs = new String[selectionArgs.length + extra.length];
-        System.arraycopy(selectionArgs, 0, newArgs, 0, selectionArgs.length);
-        System.arraycopy(extra, 0, newArgs, selectionArgs.length, extra.length);
-        
-        return newArgs;
-    }
 
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
@@ -214,8 +188,9 @@ public class PackageResourcesProvider extends ContentProvider
             case TYPE_RINGTONES:
             case TYPE_RINGTONE:
                 if (type == TYPE_RINGTONE) {
-                    selection = appendSelection(selection, "_id=?");
-                    selectionArgs = appendSelectionArgs(selectionArgs, uri.getLastPathSegment());
+                    selection = DatabaseUtilities.appendSelection(selection, "_id=?");
+                    selectionArgs = DatabaseUtilities.appendSelectionArgs(selectionArgs, 
+                            uri.getLastPathSegment());
                 }
                 return db.query("ringtone_map", projection, selection, selectionArgs, null, null,
                         sortOrder);

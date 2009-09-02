@@ -22,6 +22,7 @@ import java.util.*;
 
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.PackageResources;
+import com.tmobile.thememanager.provider.Themes.ThemeColumns;
 import com.tmobile.thememanager.utils.IOUtilities;
 
 /**
@@ -36,45 +37,41 @@ public abstract class ThemeAdapter extends BaseAdapter {
     private final Context mContext;
     private final LayoutInflater mInflater;
 
-    private static final String DB_SELECTION = OpenDatabaseHelper.THEME_PACKAGE + " = ? AND " + OpenDatabaseHelper.THEME_ID + " = ?";
+    private static final String DB_SELECTION = ThemeColumns.THEME_PACKAGE + " = ? AND " + ThemeColumns.THEME_ID + " = ?";
 
-    public static SQLiteOpenHelper createThemeItemDbHelper(Context context) {
-        return new OpenDatabaseHelper(context);
-    }
-
-    public static void insertIntoThemeItemDb(String packageName, String themeId, boolean overwrite) {
-        SQLiteOpenHelper helper = ThemeManager.getThemesDatabaseHelper();
-        Cursor c = helper.getReadableDatabase().query(
-                OpenDatabaseHelper.TABLE_NAME,
-                new String[] { OpenDatabaseHelper._ID },
+    public static void insertIntoThemeItemDb(Context context, String packageName,
+            String themeId, boolean overwrite) {
+        Cursor c = context.getContentResolver().query(
+                ThemeColumns.CONTENT_PLURAL_URI,
+                new String[] { ThemeColumns._ID },
                 DB_SELECTION,
                 new String[] { packageName, themeId },
-                null, null, null);
+                null);
         int count = 0;
         if (c != null) {
             count = c.getCount();
             c.close();
         }
         ContentValues values = new ContentValues();
-        values.put(OpenDatabaseHelper.THEME_PACKAGE, packageName);
-        values.put(OpenDatabaseHelper.THEME_ID, themeId);
+        values.put(ThemeColumns.THEME_PACKAGE, packageName);
+        values.put(ThemeColumns.THEME_ID, themeId);
         if (count == 0) {
-            helper.getWritableDatabase().insert(OpenDatabaseHelper.TABLE_NAME, null, values);
+            context.getContentResolver().insert(ThemeColumns.CONTENT_PLURAL_URI, values);
         } else if (overwrite && c.getCount() == 1) {
-            helper.getWritableDatabase().update(
-                    OpenDatabaseHelper.TABLE_NAME, values, DB_SELECTION,
+            context.getContentResolver().update(
+                    ThemeColumns.CONTENT_PLURAL_URI, values, DB_SELECTION,
                     new String[] { packageName, themeId });
         }
     }
 
-    public static boolean themeItemExistsInDb(String packageName, String themeId) {
-        SQLiteOpenHelper helper = ThemeManager.getThemesDatabaseHelper();
-        Cursor c = helper.getReadableDatabase().query(
-                OpenDatabaseHelper.TABLE_NAME,
-                new String[] { OpenDatabaseHelper._ID },
+    public static boolean themeItemExistsInDb(Context context, String packageName,
+            String themeId) {
+        Cursor c = context.getContentResolver().query(
+                ThemeColumns.CONTENT_PLURAL_URI,
+                new String[] { ThemeColumns._ID },
                 DB_SELECTION,
                 new String[] { packageName, themeId },
-                null, null, null);
+                null);
         int count = 0;
         if (c != null) {
             count = c.getCount();
@@ -83,17 +80,16 @@ public abstract class ThemeAdapter extends BaseAdapter {
         return count == 1;
     }
 
-    public static void deleteFromThemeItemDb(String packageName, String themeId) {
-        SQLiteOpenHelper helper = ThemeManager.getThemesDatabaseHelper();
-            helper.getWritableDatabase().delete(
-                OpenDatabaseHelper.TABLE_NAME, DB_SELECTION,
+    public static void deleteFromThemeItemDb(Context context, String packageName,
+            String themeId) {
+        context.getContentResolver().delete(
+                ThemeColumns.CONTENT_PLURAL_URI, DB_SELECTION,
                 new String[] { packageName, themeId });
     }
 
-    public static void deleteFromThemeItemDb(String packageName) {
-        SQLiteOpenHelper helper = ThemeManager.getThemesDatabaseHelper();
-            helper.getWritableDatabase().delete(
-                OpenDatabaseHelper.TABLE_NAME, OpenDatabaseHelper.THEME_PACKAGE + " = ?",
+    public static void deleteFromThemeItemDb(Context context, String packageName) {
+        context.getContentResolver().delete(
+                ThemeColumns.CONTENT_PLURAL_URI, ThemeColumns.THEME_PACKAGE + " = ?",
                 new String[] { packageName });
     }
 
@@ -152,16 +148,15 @@ public abstract class ThemeAdapter extends BaseAdapter {
         mThemes.clear();
 
         Map<String, Integer> map = new HashMap<String, Integer>();
-        SQLiteDatabase db = ThemeManager.getThemesDatabaseHelper().getReadableDatabase();
-        Cursor c = db.query("themeitem_map", new String[] {
-                            OpenDatabaseHelper.THEME_PACKAGE,
-            }, null, null, null, null, OpenDatabaseHelper._ID);
+        Cursor c = getContext().getContentResolver().query(ThemeColumns.CONTENT_PLURAL_URI,
+                new String[] { ThemeColumns.THEME_PACKAGE },
+                null, null, ThemeColumns._ID);
         if (c != null) {
             try {
                 boolean exist = c.moveToFirst();
                 String currentPackageName = "";
                 while (exist) {
-                    String packageName = c.getString(c.getColumnIndex(OpenDatabaseHelper.THEME_PACKAGE));
+                    String packageName = c.getString(c.getColumnIndex(ThemeColumns.THEME_PACKAGE));
                     if (!currentPackageName.equals(packageName)) {
                         currentPackageName = packageName;
                         map.put(packageName, mThemes.size());
@@ -225,12 +220,11 @@ public abstract class ThemeAdapter extends BaseAdapter {
     public int deleteThemeItem(int pos) {
         if (pos != -1) {
             ThemeItem item = mThemes.get(pos);
-            deleteFromThemeItemDb(item.getPackageName(), item.getThemeId());
-            SQLiteOpenHelper helper = ThemeManager.getThemesDatabaseHelper();
-            Cursor c = helper.getReadableDatabase().query(OpenDatabaseHelper.TABLE_NAME,
-                    new String[] { OpenDatabaseHelper._ID },
-                    OpenDatabaseHelper.THEME_PACKAGE + " = ?",
-                    new String[] { item.getPackageName() }, null, null, null);
+            deleteFromThemeItemDb(getContext(), item.getPackageName(), item.getThemeId());
+            Cursor c = getContext().getContentResolver().query(ThemeColumns.CONTENT_PLURAL_URI,
+                    new String[] { ThemeColumns._ID },
+                    ThemeColumns.THEME_PACKAGE + " = ?",
+                    new String[] { item.getPackageName() }, null);
             int count = 0;
             if (c != null) {
                 count = c.getCount();
@@ -562,47 +556,4 @@ public abstract class ThemeAdapter extends BaseAdapter {
             return b.toString();
         }
     }
-
-    private static class OpenDatabaseHelper extends SQLiteOpenHelper {
-
-        private static final String DATABASE_NAME = "theme_item.db";
-        private static final int DATABASE_VERSION = 1;
-
-        private static final String TABLE_NAME = "themeitem_map";
-        private static final String _ID = "_id";
-        private static final String THEME_ID = "theme_id";
-        private static final String THEME_PACKAGE = "theme_package";
-
-        public OpenDatabaseHelper(Context context) {
-            super(context, DATABASE_NAME, null, DATABASE_VERSION);
-        }
-
-        /**
-         * Creates database the first time we try to open it.
-         */
-        @Override
-        public void onCreate(final SQLiteDatabase db) {
-            createTables(db);
-        }
-
-        @Override
-        public void onUpgrade(final SQLiteDatabase db, int oldVer, int newVer) {
-            dropTables(db);
-            createTables(db);
-        }
-
-        private void createTables(SQLiteDatabase db) {
-            db.execSQL("CREATE TABLE themeitem_map (" +
-                    _ID + " INTEGER PRIMARY KEY, " +
-                    THEME_PACKAGE + " TEXT NOT NULL, " +
-                    THEME_ID + " TEXT" + ")");
-            db.execSQL("CREATE INDEX themeitem_map_package ON themeitem_map (theme_package)");
-            db.execSQL("CREATE UNIQUE INDEX themeitem_map_key ON themeitem_map (theme_package, theme_id)");
-        }
-
-        private void dropTables(SQLiteDatabase db) {
-            db.execSQL("DROP TABLE IF EXISTS themeitem_map");
-        }
-    }
-
 }

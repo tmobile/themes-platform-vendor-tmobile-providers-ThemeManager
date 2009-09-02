@@ -43,7 +43,7 @@ public class BootReceiver extends BroadcastReceiver {
             }
             if (pi.themeInfos == null) continue;
             for (ThemeInfo ti: pi.themeInfos) {
-                ThemeAdapter.insertIntoThemeItemDb(pi.packageName, ti.themeId, false);
+                ThemeAdapter.insertIntoThemeItemDb(context, pi.packageName, ti.themeId, false);
                 if (ti.ringtoneFileName != null) {
                     Uri ringtoneUri =
                         PackageResources.getRingtoneUri(context, pi.packageName, ti.ringtoneFileName);

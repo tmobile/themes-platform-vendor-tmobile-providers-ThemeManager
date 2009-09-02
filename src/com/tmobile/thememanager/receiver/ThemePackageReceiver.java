@@ -84,7 +84,7 @@ public class ThemePackageReceiver extends BroadcastReceiver {
     }
 
     private boolean deleteThemeResources(Context context, String packageName, boolean deferConfigurationUpdate) {
-        ThemeAdapter.deleteFromThemeItemDb(packageName);
+        ThemeAdapter.deleteFromThemeItemDb(context, packageName);
         ThemeManager.deleteThemePackage(packageName);
 
         PackageResources.deleteRingtones(context, packageName);
@@ -114,7 +114,7 @@ public class ThemePackageReceiver extends BroadcastReceiver {
         PackageInfo pi = context.getPackageManager().getPackageInfo(packageName, 0);
         if (pi != null && pi.themeInfos != null) {
             for (ThemeInfo ti: pi.themeInfos) {
-                ThemeAdapter.insertIntoThemeItemDb(packageName, ti.themeId, true);
+                ThemeAdapter.insertIntoThemeItemDb(context, packageName, ti.themeId, true);
 
                 if (removedThemeId != null && ti.themeId.equals(removedThemeId)) {
                     recreateCustomTheme = true;
