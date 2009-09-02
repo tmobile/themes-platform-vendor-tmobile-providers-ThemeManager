@@ -13,8 +13,6 @@ import android.widget.BaseAdapter;
 import android.net.Uri;
 import android.os.*;
 import android.util.Log;
-import android.database.sqlite.SQLiteOpenHelper;
-import android.database.sqlite.SQLiteDatabase;
 import android.database.Cursor;
 import android.text.TextUtils;
 

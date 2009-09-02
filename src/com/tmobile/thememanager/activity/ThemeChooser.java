@@ -8,7 +8,6 @@ import com.tmobile.thememanager.utils.BitmapStore;
 import com.tmobile.thememanager.utils.IOUtilities;
 import com.tmobile.thememanager.utils.ResourceUtilities;
 import com.tmobile.thememanager.utils.ThemeBitmapStore;
-import com.tmobile.thememanager.utils.WallpaperThumbnailCache;
 import com.tmobile.thememanager.widget.CheckOverlay;
 import com.tmobile.thememanager.widget.PreviewContentStub;
 import com.tmobile.thememanager.widget.ThemeAdapter;

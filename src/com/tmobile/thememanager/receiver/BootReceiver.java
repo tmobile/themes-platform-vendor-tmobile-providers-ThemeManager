@@ -10,7 +10,6 @@ import android.content.pm.ThemeInfo;
 import android.content.pm.SoundsInfo;
 import android.net.Uri;
 
-import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.widget.ThemeAdapter;
 import com.tmobile.thememanager.provider.PackageResources;
 

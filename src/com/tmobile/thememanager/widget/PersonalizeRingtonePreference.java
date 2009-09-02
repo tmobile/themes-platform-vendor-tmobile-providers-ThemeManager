@@ -1,7 +1,5 @@
 package com.tmobile.thememanager.widget;
 
-import com.tmobile.thememanager.R;
-
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
