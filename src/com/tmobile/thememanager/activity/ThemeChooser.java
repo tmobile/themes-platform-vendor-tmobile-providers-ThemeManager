@@ -346,8 +346,7 @@ public class ThemeChooser extends Activity {
     };
     
     private String getPreviewKey(ThemeItem theme) {
-        /* TODO: Should be changed to use unique theme name. */
-        return theme.getResourceId() + "-preview-" + 
+        return theme.getThemeId() + "-preview-" +
             ResourceUtilities.getOrientationString(this);
     }
     

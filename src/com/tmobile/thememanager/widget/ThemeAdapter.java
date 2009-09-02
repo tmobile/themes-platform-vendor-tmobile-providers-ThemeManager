@@ -350,6 +350,7 @@ public abstract class ThemeAdapter extends BaseAdapter {
             return true;
         }
 
+        /** @deprecated */
         public int getResourceId() {
             switch (type) {
                 case TYPE_FRAMEWORK:
