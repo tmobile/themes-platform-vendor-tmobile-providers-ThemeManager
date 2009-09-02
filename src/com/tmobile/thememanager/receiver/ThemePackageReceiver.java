@@ -85,7 +85,6 @@ public class ThemePackageReceiver extends BroadcastReceiver {
 
     private boolean deleteThemeResources(Context context, String packageName, boolean deferConfigurationUpdate) {
         ThemeAdapter.deleteFromThemeItemDb(context, packageName);
-        ThemeManager.deleteThemePackage(packageName);
 
         PackageResources.deleteRingtones(context, packageName);
         PackageResources.deleteImages(context, packageName);
@@ -138,7 +137,6 @@ public class ThemePackageReceiver extends BroadcastReceiver {
         }
         if (pi != null && pi.soundInfos != null) {
             for (SoundsInfo si: pi.soundInfos) {
-                ThemeManager.addThemePackage(pi.packageName + '/' + si.name, si);
                 if (si.ringtoneFileName != null) {
                     PackageResources.insertRingtone(context, pi, si);
                 }

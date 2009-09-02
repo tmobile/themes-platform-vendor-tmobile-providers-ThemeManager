@@ -22,7 +22,6 @@ public class BootReceiver extends BroadcastReceiver {
         for (PackageInfo pi: themePackages) {
             if (pi.soundInfos != null) {
                 for (SoundsInfo si : pi.soundInfos) {
-                    ThemeManager.addThemePackage(pi.packageName + '/' + si.name, si);
                     if (si.ringtoneFileName != null) {
                         Uri ringtoneUri =
                             PackageResources.getRingtoneUri(context, pi.packageName, si.ringtoneFileName);
