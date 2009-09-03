@@ -20,6 +20,7 @@ import java.util.*;
 
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.PackageResources;
+import com.tmobile.thememanager.provider.Themes;
 import com.tmobile.thememanager.provider.Themes.ThemeColumns;
 import com.tmobile.thememanager.utils.IOUtilities;
 
@@ -34,62 +35,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
     final ArrayList<ThemeItem> mThemes = new ArrayList<ThemeItem>();
     private final Context mContext;
     private final LayoutInflater mInflater;
-
-    private static final String DB_SELECTION = ThemeColumns.THEME_PACKAGE + " = ? AND " + ThemeColumns.THEME_ID + " = ?";
-
-    public static void insertIntoThemeItemDb(Context context, String packageName,
-            String themeId, boolean overwrite) {
-        Cursor c = context.getContentResolver().query(
-                ThemeColumns.CONTENT_PLURAL_URI,
-                new String[] { ThemeColumns._ID },
-                DB_SELECTION,
-                new String[] { packageName, themeId },
-                null);
-        int count = 0;
-        if (c != null) {
-            count = c.getCount();
-            c.close();
-        }
-        ContentValues values = new ContentValues();
-        values.put(ThemeColumns.THEME_PACKAGE, packageName);
-        values.put(ThemeColumns.THEME_ID, themeId);
-        if (count == 0) {
-            context.getContentResolver().insert(ThemeColumns.CONTENT_PLURAL_URI, values);
-        } else if (overwrite && c.getCount() == 1) {
-            context.getContentResolver().update(
-                    ThemeColumns.CONTENT_PLURAL_URI, values, DB_SELECTION,
-                    new String[] { packageName, themeId });
-        }
-    }
-
-    public static boolean themeItemExistsInDb(Context context, String packageName,
-            String themeId) {
-        Cursor c = context.getContentResolver().query(
-                ThemeColumns.CONTENT_PLURAL_URI,
-                new String[] { ThemeColumns._ID },
-                DB_SELECTION,
-                new String[] { packageName, themeId },
-                null);
-        int count = 0;
-        if (c != null) {
-            count = c.getCount();
-            c.close();
-        }
-        return count == 1;
-    }
-
-    public static void deleteFromThemeItemDb(Context context, String packageName,
-            String themeId) {
-        context.getContentResolver().delete(
-                ThemeColumns.CONTENT_PLURAL_URI, DB_SELECTION,
-                new String[] { packageName, themeId });
-    }
-
-    public static void deleteFromThemeItemDb(Context context, String packageName) {
-        context.getContentResolver().delete(
-                ThemeColumns.CONTENT_PLURAL_URI, ThemeColumns.THEME_PACKAGE + " = ?",
-                new String[] { packageName });
-    }
 
     public ThemeAdapter(Context context) {
         mContext = context;
@@ -218,19 +163,19 @@ public abstract class ThemeAdapter extends BaseAdapter {
     public int deleteThemeItem(int pos) {
         if (pos != -1) {
             ThemeItem item = mThemes.get(pos);
-            deleteFromThemeItemDb(getContext(), item.getPackageName(), item.getThemeId());
-            Cursor c = getContext().getContentResolver().query(ThemeColumns.CONTENT_PLURAL_URI,
-                    new String[] { ThemeColumns._ID },
-                    ThemeColumns.THEME_PACKAGE + " = ?",
-                    new String[] { item.getPackageName() }, null);
-            int count = 0;
+            Themes.deleteTheme(getContext(), item.getPackageName(), item.getThemeId());
+            Cursor c = Themes.listThemesByPackage(getContext(), item.getPackageName());
             if (c != null) {
-                count = c.getCount();
-                c.close();
-            }
-            if (count == 0) {
-                // un-install theme package
-                getContext().getPackageManager().deletePackage(item.getPackageName(), null, 0);
+                int count;
+                try {
+                    count = c.getCount();
+                } finally {
+                    c.close();
+                }
+                if (count == 0) {
+                    // un-install theme package
+                    getContext().getPackageManager().deletePackage(item.getPackageName(), null, 0);
+                }
             }
 
             mThemes.remove(pos);

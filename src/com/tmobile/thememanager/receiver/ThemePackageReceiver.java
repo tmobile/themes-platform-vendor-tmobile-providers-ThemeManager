@@ -1,9 +1,9 @@
 package com.tmobile.thememanager.receiver;
 
 import com.tmobile.thememanager.ThemeManager;
-import com.tmobile.thememanager.widget.ThemeAdapter;
 import com.tmobile.thememanager.provider.PackageResources;
 import com.tmobile.thememanager.provider.PackageResourcesProvider;
+import com.tmobile.thememanager.provider.Themes;
 import com.tmobile.thememanager.utils.ThemeBitmapStore;
 
 import android.app.ActivityManager;
@@ -84,7 +84,7 @@ public class ThemePackageReceiver extends BroadcastReceiver {
     }
 
     private boolean deleteThemeResources(Context context, String packageName, boolean deferConfigurationUpdate) {
-        ThemeAdapter.deleteFromThemeItemDb(context, packageName);
+        Themes.deleteThemesByPackage(context, packageName);
 
         PackageResources.deleteRingtones(context, packageName);
         PackageResources.deleteImages(context, packageName);
@@ -113,8 +113,6 @@ public class ThemePackageReceiver extends BroadcastReceiver {
         PackageInfo pi = context.getPackageManager().getPackageInfo(packageName, 0);
         if (pi != null && pi.themeInfos != null) {
             for (ThemeInfo ti: pi.themeInfos) {
-                ThemeAdapter.insertIntoThemeItemDb(context, packageName, ti.themeId, true);
-
                 if (removedThemeId != null && ti.themeId.equals(removedThemeId)) {
                     recreateCustomTheme = true;
                 }
@@ -133,6 +131,7 @@ public class ThemePackageReceiver extends BroadcastReceiver {
                 if (ti.favesAppImageName != null) {
                     PackageResources.insertImage(context, pi, ti, PackageResources.ImageColumns.IMAGE_TYPE_APP_FAVE);
                 }
+                Themes.insertTheme(context, pi, ti, true);
             }
         }
         if (pi != null && pi.soundInfos != null) {

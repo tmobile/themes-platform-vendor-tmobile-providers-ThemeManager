@@ -44,7 +44,7 @@ public class FileUtilities {
     public static final File[] EMPTY_FILE_ARRAY = new File[0];
     
     /**
-     * basename() Added by MSDF @ T-Mobile.  Not Apache licensed.
+     * basename() and removeExtension() Added by MSDF @ T-Mobile.  Not Apache licensed.
      */
     public static String basename(File file) {
         return basename(file.getAbsolutePath());
@@ -56,6 +56,15 @@ public class FileUtilities {
             return path;
         } else {
             return path.substring(index + 1);
+        }
+    }
+
+    public static String removeExtension(String filename) {
+        int index = filename.lastIndexOf('.');
+        if (index <= 0) {
+            return filename;
+        } else {
+            return filename.substring(0, index);
         }
     }
 

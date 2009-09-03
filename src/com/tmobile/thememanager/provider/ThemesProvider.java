@@ -30,7 +30,7 @@ public class ThemesProvider extends ContentProvider {
 
     private static class OpenDatabaseHelper extends SQLiteOpenHelper {
         private static final String DATABASE_NAME = "theme_item.db";
-        private static final int DATABASE_VERSION = 1;
+        private static final int DATABASE_VERSION = 2;
 
         public OpenDatabaseHelper(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -54,7 +54,18 @@ public class ThemesProvider extends ContentProvider {
             db.execSQL("CREATE TABLE themeitem_map (" +
                     ThemeColumns._ID + " INTEGER PRIMARY KEY, " +
                     ThemeColumns.THEME_PACKAGE + " TEXT NOT NULL, " +
-                    ThemeColumns.THEME_ID + " TEXT" + ")");
+                    ThemeColumns.THEME_ID + " TEXT, " +
+                    ThemeColumns.AUTHOR + " TEXT NOT NULL, " +
+                    ThemeColumns.IS_DRM + " INTEGER DEFAULT 0, " +
+                    ThemeColumns.IS_SYSTEM + " INTEGER DEFAULT 0, " +
+                    ThemeColumns.NAME + " TEXT NOT NULL, " +
+                    ThemeColumns.WALLPAPER_NAME + " TEXT, " +
+                    ThemeColumns.WALLPAPER_URI + " TEXT, " +
+                    ThemeColumns.RINGTONE_NAME + " TEXT, " +
+                    ThemeColumns.RINGTONE_URI + " TEXT, " +
+                    ThemeColumns.NOTIFICATION_RINGTONE_NAME + " TEXT, " +
+                    ThemeColumns.NOTIFICATION_RINGTONE_URI + " TEXT" +
+                    ")");
             db.execSQL("CREATE INDEX themeitem_map_package ON themeitem_map (theme_package)");
             db.execSQL("CREATE UNIQUE INDEX themeitem_map_key ON themeitem_map (theme_package, theme_id)");
         }
@@ -74,7 +85,7 @@ public class ThemesProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
             String sortOrder) {
         if (sortOrder == null) {
-            sortOrder = ThemeColumns._ID;
+            sortOrder = ThemeColumns.NAME;
         }
         SQLiteDatabase db = mOpenHelper.getReadableDatabase();
         int type = URI_MATCHER.match(uri);
@@ -162,9 +173,25 @@ public class ThemesProvider extends ContentProvider {
         SQLiteDatabase db = mOpenHelper.getWritableDatabase();
         int count = 0;
 
-        switch (URI_MATCHER.match(uri)) {
+        int type = URI_MATCHER.match(uri);
+        switch (type) {
             case TYPE_THEMES:
-                checkForRequiredArguments(values);
+            case TYPE_THEME:
+                if (type == TYPE_THEME) {
+                    List<String> segments = uri.getPathSegments();
+                    int n = segments.size();
+                    if (n == 3) {
+                        String packageName = segments.get(1);
+                        String themeId = segments.get(2);
+                        selection = DatabaseUtilities.appendSelection(selection,
+                                ThemeColumns.THEME_PACKAGE + "=? AND " +
+                                ThemeColumns.THEME_ID + "=?");
+                        selectionArgs = DatabaseUtilities.appendSelectionArgs(selectionArgs,
+                                packageName, themeId);
+                    } else {
+                        throw new IllegalArgumentException("Can't parse URI: " + uri);
+                    }
+                }
                 count = db.update(TABLE_NAME, values, selection, selectionArgs);
                 break;
             default:

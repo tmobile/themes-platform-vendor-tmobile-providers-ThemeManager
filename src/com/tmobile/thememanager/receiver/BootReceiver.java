@@ -10,8 +10,8 @@ import android.content.pm.ThemeInfo;
 import android.content.pm.SoundsInfo;
 import android.net.Uri;
 
-import com.tmobile.thememanager.widget.ThemeAdapter;
 import com.tmobile.thememanager.provider.PackageResources;
+import com.tmobile.thememanager.provider.Themes;
 
 public class BootReceiver extends BroadcastReceiver {
     @Override
@@ -41,7 +41,6 @@ public class BootReceiver extends BroadcastReceiver {
             }
             if (pi.themeInfos == null) continue;
             for (ThemeInfo ti: pi.themeInfos) {
-                ThemeAdapter.insertIntoThemeItemDb(context, pi.packageName, ti.themeId, false);
                 if (ti.ringtoneFileName != null) {
                     Uri ringtoneUri =
                         PackageResources.getRingtoneUri(context, pi.packageName, ti.ringtoneFileName);
@@ -82,6 +81,7 @@ public class BootReceiver extends BroadcastReceiver {
                         PackageResources.insertImage(context, pi, ti, PackageResources.ImageColumns.IMAGE_TYPE_APP_FAVE);
                     }
                 }
+                Themes.insertTheme(context, pi, ti, false);
             }
         }
     }
