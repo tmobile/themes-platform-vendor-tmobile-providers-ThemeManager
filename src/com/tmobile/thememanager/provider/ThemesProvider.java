@@ -1,6 +1,7 @@
 package com.tmobile.thememanager.provider;
 
 import com.tmobile.thememanager.provider.Themes.ThemeColumns;
+import com.tmobile.thememanager.utils.DatabaseUtilities;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -79,21 +80,24 @@ public class ThemesProvider extends ContentProvider {
         int type = URI_MATCHER.match(uri);
         switch (type) {
             case TYPE_THEMES:
+            case TYPE_THEME:
+                if (type == TYPE_THEME) {
+                    List<String> segments = uri.getPathSegments();
+                    int n = segments.size();
+                    if (n == 3) {
+                        String packageName = segments.get(1);
+                        String themeId = segments.get(2);
+                        selection = DatabaseUtilities.appendSelection(selection,
+                                ThemeColumns.THEME_PACKAGE + "=? AND " +
+                                ThemeColumns.THEME_ID + "=?");
+                        selectionArgs = DatabaseUtilities.appendSelectionArgs(selectionArgs,
+                                packageName, themeId);
+                    } else {
+                        throw new IllegalArgumentException("Can't parse URI: " + uri);
+                    }
+                }
                 return db.query(TABLE_NAME, projection, selection, selectionArgs, null, null,
                         sortOrder);
-            case TYPE_THEME:
-                List<String> segments = uri.getPathSegments();
-                int n = segments.size();
-                if (n == 3) {
-                    String packageName = segments.get(1);
-                    String themeId = segments.get(2);
-                    return db.query(TABLE_NAME, projection,
-                            ThemeColumns.THEME_PACKAGE + "=? AND " +
-                                ThemeColumns.THEME_ID + "=?",
-                            new String[] { packageName, themeId }, null, null, sortOrder);
-                } else {
-                    throw new IllegalArgumentException("Can't parse URI: " + uri);
-                }
             default:
                 throw new IllegalArgumentException("Unknown URI: " + uri);
         }
@@ -161,12 +165,7 @@ public class ThemesProvider extends ContentProvider {
         switch (URI_MATCHER.match(uri)) {
             case TYPE_THEMES:
                 checkForRequiredArguments(values);
-                String packageName = values.getAsString(ThemeColumns.THEME_PACKAGE);
-                String themeId = values.getAsString(ThemeColumns.THEME_ID);
-                count = db.update(TABLE_NAME, values,
-                        ThemeColumns.THEME_PACKAGE + "=? AND " +
-                            ThemeColumns.THEME_ID + "=?",
-                        new String[] { packageName, themeId });
+                count = db.update(TABLE_NAME, values, selection, selectionArgs);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown URI: " + uri);
