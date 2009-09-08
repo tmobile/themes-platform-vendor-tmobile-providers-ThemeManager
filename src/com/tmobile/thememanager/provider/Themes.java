@@ -126,6 +126,12 @@ public class Themes {
 
         public static final Uri CONTENT_PLURAL_URI =
             Uri.parse("content://" + AUTHORITY + "/themes");
+        
+        public static final String CONTENT_TYPE = "vnd.tmobile.cursor.dir/theme";
+        public static final String CONTENT_ITEM_TYPE = "vnd.tmobile.cursor.item/theme";
+        
+        public static final String STYLE_CONTENT_TYPE = "vnd.tmobile.cursor.dir/style";
+        public static final String STYLE_CONTENT_ITEM_TYPE = "vnd.tmobile.cursor.item/style";
 
         public static final String _ID = "_id";
         public static final String THEME_ID = "theme_id";

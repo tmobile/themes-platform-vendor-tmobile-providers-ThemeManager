@@ -159,6 +159,10 @@ public abstract class ThemeAdapter extends CursorAdapter {
             mColumnThumbnailUri = c.getColumnIndexOrThrow(ThemeColumns.THUMBNAIL_URI);
             mColumnIsSystem = c.getColumnIndexOrThrow(ThemeColumns.IS_SYSTEM);
         }
+
+        public Uri getUri(Context context) {
+            return Themes.getThemeUri(context, getPackageName(), getThemeId());
+        }
         
         private Uri parseUriNullSafe(String uriString) {
             return (uriString != null ? Uri.parse(uriString) : null);

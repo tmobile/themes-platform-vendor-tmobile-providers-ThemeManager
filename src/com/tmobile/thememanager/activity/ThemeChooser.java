@@ -283,12 +283,13 @@ public class ThemeChooser extends Activity {
         }
     }
 
-    private OnClickListener mClickListener = new OnClickListener() {
+    private final OnClickListener mClickListener = new OnClickListener() {
         public void onClick(View v) {
             Log.d(ThemeManager.TAG, "--------apply theme clicked-----------");
-            setResult(RESULT_OK);
+            ThemeItem theme = getSelectedThemeItem();
+            setResult(RESULT_OK, new Intent().setData(theme.getUri(ThemeChooser.this)));
             finish();
-            applyTheme();
+            applyTheme(theme);
         }
     };
 
@@ -470,17 +471,12 @@ public class ThemeChooser extends Activity {
         }
     }
 
-    private void applyTheme() {
+    private void applyTheme(ThemeItem theme) {
         // New theme is applied, hence reset the count to 0.
         Intent intent = new Intent(Intent.ACTION_APP_LAUNCH_FAILURE_RESET,
                 Uri.fromParts("package", "com.tmobile.thememanager.activity", null));
-        getApplicationContext().sendBroadcast(intent);
+        sendBroadcast(intent);
 
-        ThemeItem theme = getSelectedThemeItem();
-        applyTheme(theme);
-    }
-
-    private void applyTheme(ThemeItem theme) {
         Uri wallpaperUri = theme.getWallpaperUri(this);
         if (wallpaperUri != null) {
             setWallpaper(wallpaperUri);
@@ -499,6 +495,9 @@ public class ThemeChooser extends Activity {
         /* Trigger a configuration change so that all apps will update their UI.  This will also
          * persist the theme for us across reboots. */
         updateConfiguration(theme);
+
+        /* Broadcast theme change. */
+        sendBroadcast(new Intent(ThemeManager.ACTION_THEME_CHANGED, theme.getUri(this)));
     }
 
     private void updateConfiguration(ThemeItem theme) {

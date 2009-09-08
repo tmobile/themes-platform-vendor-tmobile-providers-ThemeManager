@@ -129,7 +129,15 @@ public class ThemesProvider extends ContentProvider {
     
     @Override
     public String getType(Uri uri) {
-        return null;
+        int type = URI_MATCHER.match(uri);
+        switch (type) {
+            case TYPE_THEMES:
+                return ThemeColumns.CONTENT_TYPE;
+            case TYPE_THEME:
+                return ThemeColumns.CONTENT_ITEM_TYPE;
+            default:
+                throw new IllegalArgumentException("Unknown URI: " + uri);
+        }
     }
     
     private void checkForRequiredArguments(ContentValues values) {

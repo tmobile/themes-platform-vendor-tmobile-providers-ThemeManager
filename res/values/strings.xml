@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name">Personalize</string>
+    <string name="theme_chooser_title">Theme Chooser</string>
+    <string name="style_chooser_title">Style Chooser</string>
+    <string name="theme_intent_title">T-Mobile themes</string>
+    <string name="style_intent_title">T-Mobile styles</string>
 
     <string name="set_theme">Set Theme</string>
     <string name="preview_element_1">List Item</string>
