@@ -35,6 +35,7 @@ import android.content.res.CustomTheme;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.BitmapDrawable;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -51,6 +52,7 @@ import android.widget.TextView;
 import android.widget.AdapterView.OnItemSelectedListener;
 
 import java.io.InputStream;
+import java.io.IOException;
 
 public class ThemeChooser extends Activity {
 
@@ -295,12 +297,15 @@ public class ThemeChooser extends Activity {
                 Resources r = PackageResourcesProvider.getResourcesForTheme(ThemeChooser.this,
                         thumbnailTheme.getPackageName());
 
-                Drawable d = r.getDrawable(thumbnailTheme.info.thumbnail);
+                Drawable d = new BitmapDrawable(r.getAssets().open(thumbnailTheme.info.thumbnail));
                 d.setDither(true);
                 image.setImageDrawable(d);
             } catch (NameNotFoundException e) {
                 Log.e(ThemeManager.TAG, "Unable to retrieve theme thumbnail for theme: " + 
-                        thumbnailTheme);
+                        thumbnailTheme, e);
+            } catch (IOException e) {
+                Log.e(ThemeManager.TAG, "Unable to retrieve theme thumbnail for theme: " +
+                        thumbnailTheme, e);
             }
             
             emblem.setChecked(mAppliedPos == position);
