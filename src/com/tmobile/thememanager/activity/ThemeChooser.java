@@ -341,7 +341,6 @@ public class ThemeChooser extends Activity {
         }
 
         public void onNothingSelected(AdapterView<?> parent) {
-            Log.d(ThemeManager.TAG, "No theme selected?  When does this happen?");
         }
     };
     
