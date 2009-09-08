@@ -474,7 +474,7 @@ public class ThemeChooser extends Activity {
         // New theme is applied, hence reset the count to 0.
         Intent intent = new Intent(Intent.ACTION_APP_LAUNCH_FAILURE_RESET,
                 Uri.fromParts("package", "com.tmobile.thememanager.activity", null));
-        this.getApplicationContext().sendBroadcast(intent);
+        getApplicationContext().sendBroadcast(intent);
 
         ThemeItem theme = getSelectedThemeItem();
         applyTheme(theme);
