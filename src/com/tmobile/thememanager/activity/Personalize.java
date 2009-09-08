@@ -78,8 +78,7 @@ public class Personalize extends PreferenceActivity {
             }
 
             if (wallpaperBitmap != null) {
-                thumb = ThemeWallpaperChooser.createBitmapThumbnail(wallpaperBitmap,
-                        dimension, dimension);
+                thumb = Bitmap.createScaledBitmap(wallpaperBitmap, dimension, dimension, true);
                 store.put(KEY_WALLPAPER, thumb);
             }
         } else {
