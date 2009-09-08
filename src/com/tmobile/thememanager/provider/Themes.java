@@ -40,6 +40,8 @@ public class Themes {
         outValues.put(ThemeColumns.THEME_ID, ti.themeId);
         outValues.put(ThemeColumns.THEME_PACKAGE, pi.packageName);
         outValues.put(ThemeColumns.NAME, ti.name);
+        outValues.put(ThemeColumns.STYLE_NAME,
+                ti.themeStyleName != null ? ti.themeStyleName : ti.name);
         outValues.put(ThemeColumns.AUTHOR, ti.author);
         outValues.put(ThemeColumns.IS_DRM, ti.isDrmProtected);
         outValues.put(ThemeColumns.IS_SYSTEM,
@@ -130,6 +132,7 @@ public class Themes {
         public static final String THEME_PACKAGE = "theme_package";
 
         public static final String NAME = "name";
+        public static final String STYLE_NAME = "style_name";
         public static final String AUTHOR = "author";
         public static final String IS_DRM = "is_drm";
 

@@ -126,6 +126,7 @@ public abstract class ThemeAdapter extends CursorAdapter {
         private int mColumnThemeId;
         private int mColumnThemePackage;
         private int mColumnName;
+        private int mColumnStyleName;
         private int mColumnAuthor;
         private int mColumnIsDRM;
         private int mColumnWallpaperName;
@@ -146,6 +147,7 @@ public abstract class ThemeAdapter extends CursorAdapter {
             mColumnThemeId = c.getColumnIndexOrThrow(ThemeColumns.THEME_ID);
             mColumnThemePackage = c.getColumnIndexOrThrow(ThemeColumns.THEME_PACKAGE);
             mColumnName = c.getColumnIndexOrThrow(ThemeColumns.NAME);
+            mColumnStyleName = c.getColumnIndexOrThrow(ThemeColumns.STYLE_NAME);
             mColumnAuthor = c.getColumnIndexOrThrow(ThemeColumns.AUTHOR);
             mColumnIsDRM = c.getColumnIndexOrThrow(ThemeColumns.IS_DRM);
             mColumnWallpaperName = c.getColumnIndexOrThrow(ThemeColumns.WALLPAPER_NAME);
@@ -166,6 +168,19 @@ public abstract class ThemeAdapter extends CursorAdapter {
             switch (type) {
                 case TYPE_CURSOR:
                     return mCursor.getString(mColumnName);
+            }
+            Log.e(ThemeManager.TAG, "Unknown type " + type);
+            return null;
+        }
+
+        /**
+         * Access the name to be displayed for the theme when packages sans
+         * wallpaper and ringtone. For different parts of the UI.
+         */
+        public String getStyleName() {
+            switch (type) {
+                case TYPE_CURSOR:
+                    return mCursor.getString(mColumnStyleName);
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
