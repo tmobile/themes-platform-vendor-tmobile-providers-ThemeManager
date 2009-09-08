@@ -167,6 +167,10 @@ public class PackageResources {
                     assetPath = ti.wallpaperImageName;
                     break;
 
+            case ImageColumns.IMAGE_TYPE_THUMBNAIL:
+                    assetPath = ti.thumbnail;
+                    break;
+
             default:
                     Log.e(ThemeManager.TAG, "Unknown image asset type: " + imageType);
                     assetPath = "UNKNOWN";
@@ -221,5 +225,6 @@ public class PackageResources {
         public static final int IMAGE_TYPE_WALLPAPER = 0;
         public static final int IMAGE_TYPE_FAVE = 1;
         public static final int IMAGE_TYPE_APP_FAVE = 2;
+        public static final int IMAGE_TYPE_THUMBNAIL = 3;
     }
 }

@@ -70,6 +70,13 @@ public class Themes {
                 outValues.put(ThemeColumns.NOTIFICATION_RINGTONE_URI, notifRingtoneUri.toString());
             }
         }
+        if (ti.thumbnail != null) {
+            Uri thumbnailUri = PackageResources.getImageUri(context,
+                    pi.packageName, ti.thumbnail);
+            if (thumbnailUri != null) {
+                outValues.put(ThemeColumns.THUMBNAIL_URI, thumbnailUri.toString());
+            }
+        }
     }
 
     public static Uri insertTheme(Context context, PackageInfo pi, ThemeInfo ti,
@@ -133,6 +140,8 @@ public class Themes {
         public static final String RINGTONE_URI = "ringtone_uri";
         public static final String NOTIFICATION_RINGTONE_NAME = "notif_ringtone_name";
         public static final String NOTIFICATION_RINGTONE_URI = "notif_ringtone_uri";
+
+        public static final String THUMBNAIL_URI = "thumbnail_uri";
 
         public static final String IS_SYSTEM = "system";
     }

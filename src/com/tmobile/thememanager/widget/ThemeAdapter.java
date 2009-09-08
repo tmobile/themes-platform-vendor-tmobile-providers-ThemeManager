@@ -1,144 +1,76 @@
 package com.tmobile.thememanager.widget;
 
+import android.app.Activity;
 import android.content.Context;
-import android.content.ContentValues;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.BaseThemeInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.ThemeInfo;
-import android.content.pm.PackageManager;
 import android.content.res.CustomTheme;
 import android.view.LayoutInflater;
-import android.widget.BaseAdapter;
+import android.widget.CursorAdapter;
 import android.net.Uri;
-import android.os.*;
 import android.util.Log;
 import android.database.Cursor;
-import android.text.TextUtils;
-
-import java.util.*;
 
 import com.tmobile.thememanager.ThemeManager;
-import com.tmobile.thememanager.provider.PackageResources;
 import com.tmobile.thememanager.provider.Themes;
 import com.tmobile.thememanager.provider.Themes.ThemeColumns;
-import com.tmobile.thememanager.utils.IOUtilities;
 
 /**
  * Re-usable adapter which fills itself with all currently installed visual
  * themes. Includes a convenient inner-class which can represent all types of
  * visual themes with helpful accessors.
- * 
- * @todo Possibly refactor into something even more general?
  */
-public abstract class ThemeAdapter extends BaseAdapter {
-    final ArrayList<ThemeItem> mThemes = new ArrayList<ThemeItem>();
-    private final Context mContext;
+public abstract class ThemeAdapter extends CursorAdapter {
+    /*
+     * This array holds cached ThemeItem objects to preserve the original
+     * ThemeAdapter API, prior to using CursorAdapter. When the underlying
+     * cursor changes, we recreate the array at the correct size which could be
+     * a source of performance problems under certain conditions.
+     */
+    private ThemeItem[] mThemes;
+
     private final LayoutInflater mInflater;
 
-    public ThemeAdapter(Context context) {
-        mContext = context;
+    public ThemeAdapter(Activity context) {
+        super(context, loadThemes(context));
         mInflater = LayoutInflater.from(context);
-        loadThemes();
+        allocInternal();
     }
     
     protected LayoutInflater getInflater() {
         return mInflater;
     }
 
-    protected Context getContext() {
-        return mContext;
+    private static Cursor loadThemes(Activity context) {
+        return context.managedQuery(ThemeColumns.CONTENT_PLURAL_URI,
+                null, null, ThemeColumns.NAME);
     }
 
-    public void addThemesFromPackage(PackageInfo pi) {
-        addThemesFromPackage(pi, true);
-    }
-
-    private void addThemesFromPackage(PackageInfo pi, boolean notify) {
-        if (pi == null) {
-            return;
-        }
-        if (pi.themeInfos != null) {
-            for (ThemeInfo ti: pi.themeInfos) {
-                if (!TextUtils.isEmpty(ti.themeId) && ti.type == BaseThemeInfo.InfoObjectType.TYPE_THEME) {
-                    mThemes.add(new ThemeItem(pi, ti));
-                }
-            }
-        }
-        if (notify == true) {
-            notifyDataSetChanged();
-        }
-    }
-
-    public void removeThemesByPackage(String pkg) {
-        boolean matched = false;
-
-        for (Iterator<ThemeItem> i = mThemes.iterator(); i.hasNext(); ) {
-            ThemeItem theme = i.next();
-            String packageName = theme.getPackageName();
-            if (packageName != null && packageName.equals(pkg) == true) {
-                i.remove();
-                matched = true;
-            }
-        }
-
-        if (matched == true) {
-            notifyDataSetChanged();
-        }
-    }
-
-    private void loadThemes() {
-        mThemes.clear();
-
-        Map<String, Integer> map = new HashMap<String, Integer>();
-        Cursor c = getContext().getContentResolver().query(ThemeColumns.CONTENT_PLURAL_URI,
-                new String[] { ThemeColumns.THEME_PACKAGE },
-                null, null, ThemeColumns._ID);
+    private void allocInternal() {
+        Cursor c = getCursor();
         if (c != null) {
-            try {
-                boolean exist = c.moveToFirst();
-                String currentPackageName = "";
-                while (exist) {
-                    String packageName = c.getString(c.getColumnIndex(ThemeColumns.THEME_PACKAGE));
-                    if (!currentPackageName.equals(packageName)) {
-                        currentPackageName = packageName;
-                        map.put(packageName, mThemes.size());
-                        try {
-                            PackageInfo pi = getContext().getPackageManager().getPackageInfo(packageName, 0);
-                            addThemesFromPackage(pi, false);
-                        } catch (PackageManager.NameNotFoundException e) {
-                            Log.e(ThemeManager.TAG, "Failed to find package", e);
-                        }
-                    }
-                    exist = c.moveToNext();
-                }
-            } finally {
-                c.close();
-            }
+            mThemes = new ThemeItem[getCursor().getCount()];
+        } else {
+            mThemes = null;
         }
-        notifyDataSetChanged();
     }
 
-    public int getCount() {
-        return mThemes.size();
+    @Override
+    public void notifyDataSetChanged() {
+        allocInternal();
+        super.notifyDataSetChanged();
+    }
+
+    @Override
+    public void notifyDataSetInvalidated() {
+        mThemes = null;
+        super.notifyDataSetInvalidated();
     }
 
     public int findItem(CustomTheme theme) {
         if (theme == null) return -1;
-        int n = mThemes.size();
+        int n = getCount();
         while (n-- > 0) {
-            if (mThemes.get(n).equals(theme) == true) {
-                return n;
-            }
-        }
-        return -1;
-    }
-
-    public int findItem(ThemeItem theme) {
-        if (theme == null) return -1;
-        int n = mThemes.size();
-        while (n-- > 0) {
-            if (mThemes.get(n) == theme) {
+            ThemeItem item = getTheme(n);
+            if (item.equals(theme) == true) {
                 return n;
             }
         }
@@ -146,25 +78,20 @@ public abstract class ThemeAdapter extends BaseAdapter {
     }
 
     public ThemeItem getTheme(int position) {
-        return (ThemeItem)getItem(position);
-    }
-
-    public Object getItem(int position) {
-        if (position < 0 || position >= mThemes.size()) {
-            return null;
+        if (position >= 0 && getCount() >= 0) {
+            if (mThemes[position] == null) {
+                mThemes[position] = new ThemeItem((Cursor)getItem(position));
+            }
+            return mThemes[position];
         }
-        return mThemes.get(position);
-    }
-
-    public long getItemId(int position) {
-        return position;
+        return null;
     }
 
     public int deleteThemeItem(int pos) {
         if (pos != -1) {
-            ThemeItem item = mThemes.get(pos);
-            Themes.deleteTheme(getContext(), item.getPackageName(), item.getThemeId());
-            Cursor c = Themes.listThemesByPackage(getContext(), item.getPackageName());
+            ThemeItem item = getTheme(pos);
+            Themes.deleteTheme(mContext, item.getPackageName(), item.getThemeId());
+            Cursor c = Themes.listThemesByPackage(mContext, item.getPackageName());
             if (c != null) {
                 int count;
                 try {
@@ -174,98 +101,71 @@ public abstract class ThemeAdapter extends BaseAdapter {
                 }
                 if (count == 0) {
                     // un-install theme package
-                    getContext().getPackageManager().deletePackage(item.getPackageName(), null, 0);
+                    mContext.getPackageManager().deletePackage(item.getPackageName(), null, 0);
                 }
             }
 
-            mThemes.remove(pos);
+            mThemes[pos] = null;
             notifyDataSetChanged();
         }
 
-        CustomTheme defaultTheme = CustomTheme.getDefault();
-        for (int i = 0; i < mThemes.size(); i++) {
-            ThemeItem item = mThemes.get(i);
-            if (item.getPackageName().equals(defaultTheme.getThemePackageName()) && item.getThemeId().equals(defaultTheme.getThemeId())) {
-                return i;
-            }
-        }
-        return 0;
+        return findItem(CustomTheme.getDefault());
     }
 
-    public static class ThemeItem implements Parcelable {
-        public static final int TYPE_FRAMEWORK = 0;
-        public static final int TYPE_USER = 1;
+    /*
+     * This class was once used to serve an entirely different purpose than it
+     * does now. For this reason, some of the functionality might appear
+     * redundant or strangely abstracted.
+     */
+    public static class ThemeItem {
+        public static final int TYPE_CURSOR = 0;
 
         public int type;
 
-        public PackageInfo packageInfo;
-        public BaseThemeInfo info;
-        private ThemeItem parent;
-
-        String name;
-        String themeId;
-        int resId;
+        private Cursor mCursor;
+        private int mColumnThemeId;
+        private int mColumnThemePackage;
+        private int mColumnName;
+        private int mColumnAuthor;
+        private int mColumnIsDRM;
+        private int mColumnWallpaperName;
+        private int mColumnWallpaperUri;
+        private int mColumnRingtoneName;
+        private int mColumnRingtoneUri;
+        private int mColumnNotifRingtoneName;
+        private int mColumnNotifRingtoneUri;
+        private int mColumnThumbnailUri;
+        private int mColumnIsSystem;
 
         protected ThemeItem() {
         }
-
-        public ThemeItem(PackageInfo packageInfo, BaseThemeInfo info) {
-            this.type = TYPE_USER;
-            this.packageInfo = packageInfo;
-            this.info = info;
-        }
-
-        public ThemeItem(String name, int resId) {
-            this.type = TYPE_FRAMEWORK;
-            this.name = name;
-            this.resId = resId;
-        }
-
-        public void writeToParcel(Parcel dest, int flags) {
-            dest.writeInt(type);
-            dest.writeString(name);
-            dest.writeString(themeId);
-            dest.writeInt(resId);
-            IOUtilities.writeParcelableToParcel(dest, packageInfo, 0);
-            IOUtilities.writeParcelableToParcel(dest, info, 0);
-            IOUtilities.writeParcelableToParcel(dest, parent, 0);
+        
+        public ThemeItem(Cursor c) {
+            this.type = TYPE_CURSOR;
+            mCursor = c;
+            mColumnThemeId = c.getColumnIndexOrThrow(ThemeColumns.THEME_ID);
+            mColumnThemePackage = c.getColumnIndexOrThrow(ThemeColumns.THEME_PACKAGE);
+            mColumnName = c.getColumnIndexOrThrow(ThemeColumns.NAME);
+            mColumnAuthor = c.getColumnIndexOrThrow(ThemeColumns.AUTHOR);
+            mColumnIsDRM = c.getColumnIndexOrThrow(ThemeColumns.IS_DRM);
+            mColumnWallpaperName = c.getColumnIndexOrThrow(ThemeColumns.WALLPAPER_NAME);
+            mColumnWallpaperUri = c.getColumnIndexOrThrow(ThemeColumns.WALLPAPER_URI);
+            mColumnRingtoneName = c.getColumnIndexOrThrow(ThemeColumns.RINGTONE_NAME);
+            mColumnRingtoneUri = c.getColumnIndexOrThrow(ThemeColumns.RINGTONE_URI);
+            mColumnNotifRingtoneName = c.getColumnIndexOrThrow(ThemeColumns.NOTIFICATION_RINGTONE_NAME);
+            mColumnNotifRingtoneUri = c.getColumnIndexOrThrow(ThemeColumns.NOTIFICATION_RINGTONE_URI);
+            mColumnThumbnailUri = c.getColumnIndexOrThrow(ThemeColumns.THUMBNAIL_URI);
+            mColumnIsSystem = c.getColumnIndexOrThrow(ThemeColumns.IS_SYSTEM);
         }
         
-        public static final Parcelable.Creator<ThemeItem> CREATOR =
-                new Parcelable.Creator<ThemeItem>() {
-            public ThemeItem createFromParcel(Parcel source) {
-                ThemeItem item = new ThemeItem();
-                
-                item.type = source.readInt();
-                item.name = source.readString();
-                item.themeId = source.readString();
-                item.resId = source.readInt();
-                item.packageInfo = IOUtilities.readParcelableFromParcel(source,
-                        PackageInfo.CREATOR);
-                item.info = IOUtilities.readParcelableFromParcel(source,
-                        BaseThemeInfo.CREATOR);
-                item.parent = IOUtilities.readParcelableFromParcel(source,
-                        ThemeItem.CREATOR);
-                
-                return item;
-            }
-
-            public ThemeItem[] newArray(int size) {
-                return new ThemeItem[size];
-            }
-        };
-        
-        public int describeContents() {
-            return 0;
+        private Uri parseUriNullSafe(String uriString) {
+            return (uriString != null ? Uri.parse(uriString) : null);
         }
 
         public String getName() {
             switch (type) {
-                case TYPE_FRAMEWORK:
-                    return name;
-
-                case TYPE_USER:
-                    return info.name;
+                case TYPE_CURSOR:
+                    return mCursor.getString(mColumnName);
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -273,11 +173,8 @@ public abstract class ThemeAdapter extends BaseAdapter {
 
         public String getAuthor() {
             switch (type) {
-                case TYPE_FRAMEWORK:
-                    return "T-Mobile";
-
-                case TYPE_USER:
-                    return info.author;
+                case TYPE_CURSOR:
+                    return mCursor.getString(mColumnAuthor);
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -285,24 +182,19 @@ public abstract class ThemeAdapter extends BaseAdapter {
 
         public boolean isDRMProtected() {
             switch (type) {
-                case TYPE_FRAMEWORK:
-                    return false;
-
-                case TYPE_USER:
-                    return info.isDrmProtected;
+                case TYPE_CURSOR:
+                    return mCursor.getInt(mColumnIsDRM) != 0;
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return true;
         }
 
         /** @deprecated */
-        public int getResourceId() {
+        public int getResourceId(Context context) {
             switch (type) {
-                case TYPE_FRAMEWORK:
-                    return resId;
-
-                case TYPE_USER:
-                    return info.styleResourceId;
+                case TYPE_CURSOR:
+                    return CustomTheme.getStyleId(context, getPackageName(),
+                            getThemeId());
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return -1;
@@ -310,11 +202,8 @@ public abstract class ThemeAdapter extends BaseAdapter {
 
         public String getThemeId() {
             switch (type) {
-                case TYPE_FRAMEWORK:
-                    return null;
-
-                case TYPE_USER:
-                    return info.themeId;
+                case TYPE_CURSOR:
+                    return mCursor.getString(mColumnThemeId);
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -322,11 +211,8 @@ public abstract class ThemeAdapter extends BaseAdapter {
 
         public String getPackageName() {
             switch (type) {
-                case TYPE_FRAMEWORK:
-                    return null;
-
-                case TYPE_USER:
-                    return packageInfo.packageName;
+                case TYPE_CURSOR:
+                    return mCursor.getString(mColumnThemePackage);
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -341,11 +227,8 @@ public abstract class ThemeAdapter extends BaseAdapter {
          */
         public String getWallpaperIdentifier() {
             switch (type) {
-                case TYPE_FRAMEWORK:
-                    return null;
-                    
-                case TYPE_USER:
-                    return info.wallpaperImageName;
+                case TYPE_CURSOR:
+                    return mCursor.getString(mColumnWallpaperName);
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -353,16 +236,8 @@ public abstract class ThemeAdapter extends BaseAdapter {
         
         public Uri getWallpaperUri(Context context) {
             switch (type) {
-                case TYPE_FRAMEWORK:
-                    return null;
-                    
-                case TYPE_USER:
-                    if (info.wallpaperImageName == null) {
-                        return null;
-                    } else {
-                        return PackageResources.getImageUri(context, getPackageName(),
-                                info.wallpaperImageName);
-                    }
+                case TYPE_CURSOR:
+                    return parseUriNullSafe(mCursor.getString(mColumnWallpaperUri));
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -370,16 +245,8 @@ public abstract class ThemeAdapter extends BaseAdapter {
         
         public Uri getRingtoneUri(Context context) {
             switch (type) {
-                case TYPE_FRAMEWORK:
-                    return null;
-                    
-                case TYPE_USER:
-                    if (info.ringtoneFileName == null) {
-                        return null;
-                    } else {
-                        return PackageResources.getRingtoneUri(context, getPackageName(),
-                                info.ringtoneFileName);
-                    }
+                case TYPE_CURSOR:
+                    return parseUriNullSafe(mCursor.getString(mColumnRingtoneUri));
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -387,11 +254,8 @@ public abstract class ThemeAdapter extends BaseAdapter {
         
         public String getRingtoneName() {
             switch (type) {
-                case TYPE_FRAMEWORK:
-                    return null;
-                    
-                case TYPE_USER:
-                    return info.ringtoneName;
+                case TYPE_CURSOR:
+                    return mCursor.getString(mColumnRingtoneName);
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -399,16 +263,8 @@ public abstract class ThemeAdapter extends BaseAdapter {
         
         public Uri getNotificationRingtoneUri(Context context) {
             switch (type) {
-                case TYPE_FRAMEWORK:
-                    return null;
-                    
-                case TYPE_USER:
-                    if (info.notificationRingtoneFileName == null) {
-                        return null;
-                    } else {
-                        return PackageResources.getRingtoneUri(context, getPackageName(),
-                                info.notificationRingtoneFileName);
-                    }
+                case TYPE_CURSOR:
+                    return parseUriNullSafe(mCursor.getString(mColumnNotifRingtoneUri));
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -416,23 +272,27 @@ public abstract class ThemeAdapter extends BaseAdapter {
         
         public String getNotificationRingtoneName() {
             switch (type) {
-                case TYPE_FRAMEWORK:
-                    return null;
-                    
-                case TYPE_USER:
-                    return info.notificationRingtoneName;
+                case TYPE_CURSOR:
+                    return mCursor.getString(mColumnNotifRingtoneName);
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
         }
 
+        public Uri getThumbnailUri() {
+            switch (type) {
+                case TYPE_CURSOR:
+                    return parseUriNullSafe(mCursor.getString(mColumnThumbnailUri));
+            }
+            Log.e(ThemeManager.TAG, "Unknown type " + type);
+            return null;
+        }
+
+        /** @deprecated */
         public String getSoundPackName() {
             switch (type) {
-                case TYPE_FRAMEWORK:
+                case TYPE_CURSOR:
                     return null;
-
-                case TYPE_USER:
-                    return info.soundPackName;
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return null;
@@ -446,11 +306,8 @@ public abstract class ThemeAdapter extends BaseAdapter {
          */
         public boolean isRemovable() {
             switch (type) {
-                case TYPE_FRAMEWORK:
-                    return false;
-
-                case TYPE_USER:
-                    return (packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0;
+                case TYPE_CURSOR:
+                    return mCursor.getInt(mColumnIsSystem) == 0;
             }
             Log.e(ThemeManager.TAG, "Unknown type " + type);
             return false;
@@ -458,21 +315,7 @@ public abstract class ThemeAdapter extends BaseAdapter {
 
         public boolean equals(CustomTheme theme) {
             switch (type) {
-                case TYPE_FRAMEWORK:
-                    if (theme == null) {
-                        return getResourceId() == -1;
-                    }
-                    if (theme.getThemePackageName() != null) {
-                        return false;
-                    }
-                    /*
-                     * TODO: This test is incomplete because the CustomTheme
-                     * object is no longer capable of expressing framework
-                     * themes.  This is a bug in CustomTheme.
-                     */
-                    return false;
-
-                case TYPE_USER:
+                case TYPE_CURSOR:
                     if (theme == null) {
                         return false;
                     }
@@ -492,7 +335,6 @@ public abstract class ThemeAdapter extends BaseAdapter {
             b.append("type=").append(type).append("; ");
             b.append("pkg=").append(getPackageName()).append("; ");
             b.append("themeId=").append(getThemeId()).append("; ");
-            b.append("resId=").append(getResourceId()).append("; ");
             b.append("name=").append(getName()).append("; ");
             b.append("drm=").append(isDRMProtected());
             b.append('}');

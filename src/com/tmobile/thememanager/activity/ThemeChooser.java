@@ -3,7 +3,6 @@ package com.tmobile.thememanager.activity;
 import com.tmobile.thememanager.R;
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.PackageResources;
-import com.tmobile.thememanager.provider.PackageResourcesProvider;
 import com.tmobile.thememanager.utils.BitmapStore;
 import com.tmobile.thememanager.utils.IOUtilities;
 import com.tmobile.thememanager.utils.ResourceUtilities;
@@ -21,21 +20,16 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ThemeInfo;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.content.res.CustomTheme;
-import android.content.res.Resources;
+import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.BitmapDrawable;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -60,7 +54,6 @@ public class ThemeChooser extends Activity {
     private static final int APPLY_DEFAULT_THEME_DIALOG = 3;
 
     private HeaderButton mApplyButton;
-    private BroadcastReceiver mInstallReceiver;
 
     private Filmstrip mFilmstrip;
     private ThumbnailAdapter mAdapter;
@@ -94,18 +87,6 @@ public class ThemeChooser extends Activity {
         mApplyButton = (HeaderButton)findViewById(R.id.preview_header);
         mApplyButton.getButton().setOnClickListener(mClickListener);
 
-        /* Even though we have a global receiver, we also need a receiver to be registered
-         * so long as the themes UI is present (or could be present soon). */
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_PACKAGE_ADDED);
-        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
-        filter.addCategory(Intent.CATEGORY_THEME_PACKAGE_INSTALLED_STATE_CHANGE);
-        filter.addDataScheme("package");
-        if (mInstallReceiver == null) {
-            mInstallReceiver = new InstallReceiver();
-        }
-        registerReceiver(mInstallReceiver, filter);
-
         mAM = (ActivityManager)getSystemService(ACTIVITY_SERVICE);
 
         mAdapter = new ThumbnailAdapter(this);
@@ -120,10 +101,6 @@ public class ThemeChooser extends Activity {
 
     @Override
     public void onDestroy() {
-        if (mInstallReceiver != null) {
-            unregisterReceiver(mInstallReceiver);
-            mInstallReceiver = null;
-        }
         if (mPreviewContentStub != null) {
             unregisterForContextMenu(mPreviewContentStub);
         }
@@ -139,7 +116,7 @@ public class ThemeChooser extends Activity {
     }
     
     private ThemeItem getSelectedThemeItem() {
-        return (ThemeItem)mFilmstrip.getSelectedItem();
+        return mAdapter.getTheme(mFilmstrip.getSelectedItemPosition());
     }
 
     @Override
@@ -242,17 +219,8 @@ public class ThemeChooser extends Activity {
         private final SparseArray<BitmapStore> mBitmapStores =
             new SparseArray<BitmapStore>();
 
-        public ThumbnailAdapter(Context context) {
+        public ThumbnailAdapter(Activity context) {
             super(context);
-        }
-
-        public void setAppliedItem(ThemeItem item) {
-            for (int pos = 0; pos < getCount(); pos++) {
-                ThemeItem it = getTheme(pos);
-                if (item == it) {
-                    setAppliedPosition(pos);
-                }
-            }
         }
 
         public int getAppliedPosition() {
@@ -275,42 +243,26 @@ public class ThemeChooser extends Activity {
             }
             return store;
         }
-        
-        public View getView(int position, View convertView, ViewGroup parent) {
-            CheckOverlay emblem;
-            ThumbnailedBitmapView image;
 
-            if (convertView == null) {
-                emblem = (CheckOverlay)getInflater().inflate(R.layout.theme_thumbnail,
-                        parent, false);
-                ((ThumbnailedBitmapView)emblem.getWrappedView()).setRecycleOnChange(false);
-            } else {
-                emblem = (CheckOverlay)convertView;
-            }
+        @Override
+        public View newView(Context context, Cursor cursor, ViewGroup parent) {
+            CheckOverlay emblem = (CheckOverlay)getInflater().inflate(R.layout.theme_thumbnail,
+                    parent, false);
+            ((ThumbnailedBitmapView)emblem.getWrappedView()).setRecycleOnChange(false);
+            return emblem;
+        }
 
-            image = (ThumbnailedBitmapView)emblem.getWrappedView();
+        @Override
+        public void bindView(View view, Context context, Cursor cursor) {
+            CheckOverlay emblem = (CheckOverlay)view;
+
+            ThumbnailedBitmapView image = (ThumbnailedBitmapView)emblem.getWrappedView();
+
+            int position = cursor.getPosition();
             ThemeItem item = getTheme(position);
-
-            ThemeItem thumbnailTheme = item;
-
-            try {
-                Resources r = PackageResourcesProvider.getResourcesForTheme(ThemeChooser.this,
-                        thumbnailTheme.getPackageName());
-
-                Drawable d = new BitmapDrawable(r.getAssets().open(thumbnailTheme.info.thumbnail));
-                d.setDither(true);
-                image.setImageDrawable(d);
-            } catch (NameNotFoundException e) {
-                Log.e(ThemeManager.TAG, "Unable to retrieve theme thumbnail for theme: " + 
-                        thumbnailTheme, e);
-            } catch (IOException e) {
-                Log.e(ThemeManager.TAG, "Unable to retrieve theme thumbnail for theme: " +
-                        thumbnailTheme, e);
-            }
+            image.setImageURI(item.getThumbnailUri());
             
             emblem.setChecked(mAppliedPos == position);
-
-            return emblem;
         }
     }
 
@@ -467,7 +419,7 @@ public class ThemeChooser extends Activity {
 
     /* package */ static void applyTemporaryTheming(Activity context, ThemeItem theme) {
         String pkg = theme.getPackageName();
-        int resId = theme.getResourceId();
+        int resId = theme.getResourceId(context);
 
         if (pkg == null && resId == -1) {
             CustomTheme defaultTheme = CustomTheme.getDefault();
@@ -497,9 +449,18 @@ public class ThemeChooser extends Activity {
         int defaultPos = mAdapter.deleteThemeItem(oldSelection);
 
         if (resetToDefault) {
-            mAdapter.setAppliedPosition(defaultPos);
-            mFilmstrip.setSelection(defaultPos);
-            applyTheme(mAdapter.getTheme(defaultPos));
+            if (defaultPos == -1) {
+                if (mAdapter.getCount() > 0) {
+                    defaultPos = 0;
+                } else {
+                    Log.e(ThemeManager.TAG, "No default theme to restore to!");
+                }
+            }
+            if (defaultPos >= 0) {
+                mAdapter.setAppliedPosition(defaultPos);
+                mFilmstrip.setSelection(defaultPos);
+                applyTheme(mAdapter.getTheme(defaultPos));
+            }
         }
     }
 
@@ -585,25 +546,6 @@ public class ThemeChooser extends Activity {
         }
     }
 
-    private class InstallReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            String pkg = intent.getData().getSchemeSpecificPart();
-
-            if (action.equals(Intent.ACTION_PACKAGE_REMOVED) == true) {
-                mAdapter.removeThemesByPackage(pkg);
-                selectAppliedTheme(false);
-            } else if (action.equals(Intent.ACTION_PACKAGE_ADDED) == true) {
-                try {
-                    mAdapter.addThemesFromPackage(getPackageManager().getPackageInfo(pkg, 0));
-                } catch (NameNotFoundException e) {
-                    Log.e(ThemeManager.TAG, "Failed to get package info for recently added theme: " + pkg, e);
-                }
-            }
-        }
-    }
-    
     private final CacheStorageHandler mHandler = new CacheStorageHandler();
     private class CacheStorageHandler extends Handler {
         private static final int MSG_TRY_PREVIEW_SAVE = 1;

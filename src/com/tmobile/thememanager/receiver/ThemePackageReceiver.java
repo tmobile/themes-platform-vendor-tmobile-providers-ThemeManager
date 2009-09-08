@@ -111,6 +111,16 @@ public class ThemePackageReceiver extends BroadcastReceiver {
 
     private void addThemeResources(Context context, String packageName) throws NameNotFoundException {
         PackageInfo pi = context.getPackageManager().getPackageInfo(packageName, 0);
+        if (pi != null && pi.soundInfos != null) {
+            for (SoundsInfo si: pi.soundInfos) {
+                if (si.ringtoneFileName != null) {
+                    PackageResources.insertRingtone(context, pi, si);
+                }
+                if (si.notificationRingtoneFileName != null) {
+                    PackageResources.insertNotificationRingtone(context, pi, si);
+                }
+            }
+        }
         if (pi != null && pi.themeInfos != null) {
             for (ThemeInfo ti: pi.themeInfos) {
                 if (removedThemeId != null && ti.themeId.equals(removedThemeId)) {
@@ -131,17 +141,10 @@ public class ThemePackageReceiver extends BroadcastReceiver {
                 if (ti.favesAppImageName != null) {
                     PackageResources.insertImage(context, pi, ti, PackageResources.ImageColumns.IMAGE_TYPE_APP_FAVE);
                 }
+                if (ti.thumbnail != null) {
+                    PackageResources.insertImage(context, pi, ti, PackageResources.ImageColumns.IMAGE_TYPE_THUMBNAIL);
+                }
                 Themes.insertTheme(context, pi, ti, true);
-            }
-        }
-        if (pi != null && pi.soundInfos != null) {
-            for (SoundsInfo si: pi.soundInfos) {
-                if (si.ringtoneFileName != null) {
-                    PackageResources.insertRingtone(context, pi, si);
-                }
-                if (si.notificationRingtoneFileName != null) {
-                    PackageResources.insertNotificationRingtone(context, pi, si);
-                }
             }
         }
     }
