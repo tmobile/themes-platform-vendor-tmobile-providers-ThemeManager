@@ -83,37 +83,48 @@ public class ThemesProvider extends ContentProvider {
         return true;
     }
 
-    @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
-            String sortOrder) {
+    private Cursor queryThemes(int type, Uri uri, SQLiteDatabase db, String[] projection,
+            String selection, String[] selectionArgs, String sortOrder) {
         if (sortOrder == null) {
             sortOrder = ThemeColumns.NAME;
         }
+        if (type == TYPE_THEME) {
+            List<String> segments = uri.getPathSegments();
+            int n = segments.size();
+            if (n == 3) {
+                String packageName = segments.get(1);
+                String themeId = segments.get(2);
+                selection = DatabaseUtilities.appendSelection(selection,
+                        ThemeColumns.THEME_PACKAGE + "=? AND " +
+                        ThemeColumns.THEME_ID + "=?");
+                selectionArgs = DatabaseUtilities.appendSelectionArgs(selectionArgs,
+                        packageName, themeId);
+            } else {
+                throw new IllegalArgumentException("Can't parse URI: " + uri);
+            }
+        }
+        return db.query(TABLE_NAME, projection, selection, selectionArgs, null, null,
+                sortOrder);
+    }
+
+    @Override
+    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+            String sortOrder) {
         SQLiteDatabase db = mOpenHelper.getReadableDatabase();
         int type = URI_MATCHER.match(uri);
+        Cursor c;
         switch (type) {
             case TYPE_THEMES:
             case TYPE_THEME:
-                if (type == TYPE_THEME) {
-                    List<String> segments = uri.getPathSegments();
-                    int n = segments.size();
-                    if (n == 3) {
-                        String packageName = segments.get(1);
-                        String themeId = segments.get(2);
-                        selection = DatabaseUtilities.appendSelection(selection,
-                                ThemeColumns.THEME_PACKAGE + "=? AND " +
-                                ThemeColumns.THEME_ID + "=?");
-                        selectionArgs = DatabaseUtilities.appendSelectionArgs(selectionArgs,
-                                packageName, themeId);
-                    } else {
-                        throw new IllegalArgumentException("Can't parse URI: " + uri);
-                    }
-                }
-                return db.query(TABLE_NAME, projection, selection, selectionArgs, null, null,
-                        sortOrder);
+                c = queryThemes(type, uri, db, projection, selection, selectionArgs, sortOrder);
+                break;
             default:
                 throw new IllegalArgumentException("Unknown URI: " + uri);
         }
+        if (c != null) {
+            c.setNotificationUri(getContext().getContentResolver(), uri);
+        }
+        return c;
     }    
     
     @Override
@@ -131,6 +142,11 @@ public class ThemesProvider extends ContentProvider {
                     ThemeColumns.THEME_ID);
         }
 
+    }
+
+    private void notifyChanges() {
+        getContext().getContentResolver()
+            .notifyChange(Themes.ThemeColumns.CONTENT_PLURAL_URI, null);
     }
 
     @Override
@@ -160,7 +176,7 @@ public class ThemesProvider extends ContentProvider {
         }
 
         if (newUri != null) {
-            getContext().getContentResolver().notifyChange(newUri, null);
+            notifyChanges();
         }
 
         return newUri;
@@ -200,6 +216,10 @@ public class ThemesProvider extends ContentProvider {
                 throw new IllegalArgumentException("Unknown URI: " + uri);
         }
 
+        if (count > 0) {
+            notifyChanges();
+        }
+
         return count;
     }
 
@@ -218,6 +238,10 @@ public class ThemesProvider extends ContentProvider {
                 break;
             default:
                 throw new IllegalArgumentException("Unknown URI: " + uri);
+        }
+
+        if (count > 0) {
+            notifyChanges();
         }
 
         return count;

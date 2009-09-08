@@ -30,7 +30,7 @@ public abstract class ThemeAdapter extends CursorAdapter {
     private final LayoutInflater mInflater;
 
     public ThemeAdapter(Activity context) {
-        super(context, loadThemes(context));
+        super(context, loadThemes(context), true);
         mInflater = LayoutInflater.from(context);
         allocInternal();
     }

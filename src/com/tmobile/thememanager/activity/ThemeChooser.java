@@ -223,6 +223,12 @@ public class ThemeChooser extends Activity {
             super(context);
         }
 
+        @Override
+        public void notifyDataSetChanged() {
+            super.notifyDataSetChanged();
+            selectAppliedTheme(false);
+        }
+
         public int getAppliedPosition() {
             return mAppliedPos;
         }
