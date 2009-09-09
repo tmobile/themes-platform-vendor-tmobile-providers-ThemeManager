@@ -12,6 +12,12 @@ import android.util.Log;
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.Themes.ThemeColumns;
 
+/**
+ * There is plenty of leaky abstraction present in this class as it was ported
+ * over from an original design no longer relevant.  Specifically, the interface
+ * wraps a cursor but must be positioned prior to usage if more than one row
+ * exists.
+ */
 public class ThemeItem {
     public static final int TYPE_CURSOR = 0;
 
@@ -33,26 +39,47 @@ public class ThemeItem {
     private int mColumnThumbnailUri;
     private int mColumnIsSystem;
 
-    protected ThemeItem() {
+    public static ThemeItem getInstance(Context context, Uri uri) {
+        Cursor c = context.getContentResolver().query(uri, null, null, null, null);
+        if (c != null && c.moveToFirst() == true) {
+            return new ThemeItem(c);
+        }
+        return null;
     }
 
     public ThemeItem(Cursor c) {
         this.type = TYPE_CURSOR;
         mCursor = c;
-        mColumnThemeId = c.getColumnIndexOrThrow(ThemeColumns.THEME_ID);
-        mColumnThemePackage = c.getColumnIndexOrThrow(ThemeColumns.THEME_PACKAGE);
-        mColumnName = c.getColumnIndexOrThrow(ThemeColumns.NAME);
-        mColumnStyleName = c.getColumnIndexOrThrow(ThemeColumns.STYLE_NAME);
-        mColumnAuthor = c.getColumnIndexOrThrow(ThemeColumns.AUTHOR);
-        mColumnIsDRM = c.getColumnIndexOrThrow(ThemeColumns.IS_DRM);
-        mColumnWallpaperName = c.getColumnIndexOrThrow(ThemeColumns.WALLPAPER_NAME);
-        mColumnWallpaperUri = c.getColumnIndexOrThrow(ThemeColumns.WALLPAPER_URI);
-        mColumnRingtoneName = c.getColumnIndexOrThrow(ThemeColumns.RINGTONE_NAME);
-        mColumnRingtoneUri = c.getColumnIndexOrThrow(ThemeColumns.RINGTONE_URI);
-        mColumnNotifRingtoneName = c.getColumnIndexOrThrow(ThemeColumns.NOTIFICATION_RINGTONE_NAME);
-        mColumnNotifRingtoneUri = c.getColumnIndexOrThrow(ThemeColumns.NOTIFICATION_RINGTONE_URI);
-        mColumnThumbnailUri = c.getColumnIndexOrThrow(ThemeColumns.THUMBNAIL_URI);
-        mColumnIsSystem = c.getColumnIndexOrThrow(ThemeColumns.IS_SYSTEM);
+        mColumnThemeId = c.getColumnIndex(ThemeColumns.THEME_ID);
+        mColumnThemePackage = c.getColumnIndex(ThemeColumns.THEME_PACKAGE);
+        mColumnName = c.getColumnIndex(ThemeColumns.NAME);
+        mColumnStyleName = c.getColumnIndex(ThemeColumns.STYLE_NAME);
+        mColumnAuthor = c.getColumnIndex(ThemeColumns.AUTHOR);
+        mColumnIsDRM = c.getColumnIndex(ThemeColumns.IS_DRM);
+        mColumnWallpaperName = c.getColumnIndex(ThemeColumns.WALLPAPER_NAME);
+        mColumnWallpaperUri = c.getColumnIndex(ThemeColumns.WALLPAPER_URI);
+        mColumnRingtoneName = c.getColumnIndex(ThemeColumns.RINGTONE_NAME);
+        mColumnRingtoneUri = c.getColumnIndex(ThemeColumns.RINGTONE_URI);
+        mColumnNotifRingtoneName = c.getColumnIndex(ThemeColumns.NOTIFICATION_RINGTONE_NAME);
+        mColumnNotifRingtoneUri = c.getColumnIndex(ThemeColumns.NOTIFICATION_RINGTONE_URI);
+        mColumnThumbnailUri = c.getColumnIndex(ThemeColumns.THUMBNAIL_URI);
+        mColumnIsSystem = c.getColumnIndex(ThemeColumns.IS_SYSTEM);
+    }
+
+    public void close() {
+        switch (type) {
+            case TYPE_CURSOR:
+                mCursor.close();
+                break;
+        }
+    }
+
+    public void setPosition(int position) {
+        switch (type) {
+            case TYPE_CURSOR:
+                mCursor.moveToPosition(position);
+                break;
+        }
     }
 
     public Uri getUri(Context context) {

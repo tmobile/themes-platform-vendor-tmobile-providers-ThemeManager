@@ -16,14 +16,7 @@ import com.tmobile.thememanager.provider.Themes.ThemeColumns;
  * visual themes with helpful accessors.
  */
 public abstract class ThemeAdapter extends CursorAdapter {
-    /*
-     * This array holds cached ThemeItem objects to preserve the original
-     * ThemeAdapter API, prior to using CursorAdapter. When the underlying
-     * cursor changes, we recreate the array at the correct size which could be
-     * a source of performance problems under certain conditions.
-     */
-    private ThemeItem[] mThemes;
-
+    private ThemeItem mThemeDAO;
     private final LayoutInflater mInflater;
 
     public ThemeAdapter(Activity context) {
@@ -44,9 +37,9 @@ public abstract class ThemeAdapter extends CursorAdapter {
     private void allocInternal() {
         Cursor c = getCursor();
         if (c != null) {
-            mThemes = new ThemeItem[getCursor().getCount()];
+            mThemeDAO = new ThemeItem(c);
         } else {
-            mThemes = null;
+            mThemeDAO = null;
         }
     }
 
@@ -58,7 +51,7 @@ public abstract class ThemeAdapter extends CursorAdapter {
 
     @Override
     public void notifyDataSetInvalidated() {
-        mThemes = null;
+        mThemeDAO = null;
         super.notifyDataSetInvalidated();
     }
 
@@ -76,10 +69,8 @@ public abstract class ThemeAdapter extends CursorAdapter {
 
     public ThemeItem getTheme(int position) {
         if (position >= 0 && getCount() >= 0) {
-            if (mThemes[position] == null) {
-                mThemes[position] = new ThemeItem((Cursor)getItem(position));
-            }
-            return mThemes[position];
+            mThemeDAO.setPosition(position);
+            return mThemeDAO;
         }
         return null;
     }
@@ -102,7 +93,6 @@ public abstract class ThemeAdapter extends CursorAdapter {
                 }
             }
 
-            mThemes[pos] = null;
             notifyDataSetChanged();
         }
 

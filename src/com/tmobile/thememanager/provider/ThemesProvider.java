@@ -85,8 +85,10 @@ public class ThemesProvider extends ContentProvider {
 
     private Cursor queryThemes(int type, Uri uri, SQLiteDatabase db, String[] projection,
             String selection, String[] selectionArgs, String sortOrder) {
-        if (sortOrder == null) {
-            sortOrder = ThemeColumns.NAME;
+        if (type == TYPE_THEMES) {
+            if (sortOrder == null) {
+                sortOrder = ThemeColumns.NAME;
+            }
         }
         if (type == TYPE_THEME) {
             List<String> segments = uri.getPathSegments();
