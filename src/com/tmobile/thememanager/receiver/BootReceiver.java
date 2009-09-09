@@ -2,12 +2,15 @@ package com.tmobile.thememanager.receiver;
 
 import java.util.List;
 
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.ThemeInfo;
 import android.content.pm.SoundsInfo;
+import android.content.res.Configuration;
+import android.content.res.CustomTheme;
 import android.net.Uri;
 
 import com.tmobile.thememanager.provider.PackageResources;
@@ -17,6 +20,12 @@ public class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         List<PackageInfo> themePackages = context.getPackageManager().getInstalledThemePackages();
+
+        /* Determine the current theme so that we can use this information during insertTheme. */
+        ActivityManager am = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
+        Configuration config = am.getConfiguration();
+        CustomTheme appliedTheme = (config.customTheme != null ? config.customTheme :
+            CustomTheme.getDefault());
 
         for (PackageInfo pi: themePackages) {
             if (pi.soundInfos != null) {
@@ -89,9 +98,20 @@ public class BootReceiver extends BroadcastReceiver {
                         PackageResources.insertImage(context, pi, ti, PackageResources.ImageColumns.IMAGE_TYPE_THUMBNAIL);
                     }
                 }
-                Themes.insertTheme(context, pi, ti, false);
+                Themes.insertTheme(context, pi, ti, false,
+                        themeEquals(pi, ti, appliedTheme));
             }
         }
     }
 
+    private static boolean themeEquals(PackageInfo pi, ThemeInfo ti,
+            CustomTheme current) {
+        if (!pi.packageName.equals(current.getThemePackageName())) {
+            return false;
+        }
+        if (!ti.themeId.equals(current.getThemeId())) {
+            return false;
+        }
+        return true;
+    }
 }

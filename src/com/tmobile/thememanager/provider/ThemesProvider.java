@@ -30,7 +30,7 @@ public class ThemesProvider extends ContentProvider {
 
     private static class OpenDatabaseHelper extends SQLiteOpenHelper {
         private static final String DATABASE_NAME = "theme_item.db";
-        private static final int DATABASE_VERSION = 4;
+        private static final int DATABASE_VERSION = 6;
 
         public OpenDatabaseHelper(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -55,6 +55,7 @@ public class ThemesProvider extends ContentProvider {
                     ThemeColumns._ID + " INTEGER PRIMARY KEY, " +
                     ThemeColumns.THEME_PACKAGE + " TEXT NOT NULL, " +
                     ThemeColumns.THEME_ID + " TEXT, " +
+                    ThemeColumns.IS_APPLIED + " INTEGER DEFAULT 0, " +
                     ThemeColumns.AUTHOR + " TEXT NOT NULL, " +
                     ThemeColumns.IS_DRM + " INTEGER DEFAULT 0, " +
                     ThemeColumns.IS_SYSTEM + " INTEGER DEFAULT 0, " +

@@ -35,6 +35,11 @@ public class Themes {
                 new String[] { packageName }, null);
     }
 
+    public static Cursor getAppliedTheme(Context context) {
+        return context.getContentResolver().query(ThemeColumns.CONTENT_PLURAL_URI,
+                null, ThemeColumns.IS_APPLIED + "=1", null, null);
+    }
+
     private static void populateContentValues(Context context, ContentValues outValues,
             PackageInfo pi, ThemeInfo ti) {
         outValues.put(ThemeColumns.THEME_ID, ti.themeId);
@@ -83,6 +88,11 @@ public class Themes {
 
     public static Uri insertTheme(Context context, PackageInfo pi, ThemeInfo ti,
             boolean overwrite) {
+        return insertTheme(context, pi, ti, overwrite, false);
+    }
+
+    public static Uri insertTheme(Context context, PackageInfo pi, ThemeInfo ti,
+            boolean overwrite, boolean isCurrentTheme) {
         Uri existingUri = getThemeUri(context, pi.packageName, ti.themeId);
         Cursor c = context.getContentResolver().query(existingUri,
                 new String[] { ThemeColumns._ID }, null, null, null);
@@ -97,6 +107,7 @@ public class Themes {
         }
         ContentValues values = new ContentValues();
         populateContentValues(context, values, pi, ti);
+        values.put(ThemeColumns.IS_APPLIED, isCurrentTheme ? 1 : 0);
         if (count == 0) {
             return context.getContentResolver().insert(ThemeColumns.CONTENT_PLURAL_URI, values);
         } else if (overwrite && count == 1) {
@@ -120,6 +131,17 @@ public class Themes {
                 new String[] { packageName });
     }
 
+    public static void setAppliedTheme(Context context, String packageName, String themeId) {
+        ContentValues values = new ContentValues();
+        values.put(ThemeColumns.IS_APPLIED, 0);
+        context.getContentResolver().update(ThemeColumns.CONTENT_PLURAL_URI, values, null, null);
+        values.put(ThemeColumns.IS_APPLIED, 1);
+        context.getContentResolver().update(ThemeColumns.CONTENT_PLURAL_URI, values, 
+                ThemeColumns.THEME_PACKAGE + " = ? AND " +
+                    ThemeColumns.THEME_ID + " = ?",
+                new String[] { packageName, themeId });
+    }
+
     public interface ThemeColumns {
         public static final Uri CONTENT_URI =
             Uri.parse("content://" + AUTHORITY + "/theme");
@@ -136,6 +158,8 @@ public class Themes {
         public static final String _ID = "_id";
         public static final String THEME_ID = "theme_id";
         public static final String THEME_PACKAGE = "theme_package";
+
+        public static final String IS_APPLIED = "is_applied";
 
         public static final String NAME = "name";
         public static final String STYLE_NAME = "style_name";

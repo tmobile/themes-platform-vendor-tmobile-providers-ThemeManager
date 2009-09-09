@@ -38,9 +38,14 @@ public class ThemeItem {
     private int mColumnNotifRingtoneUri;
     private int mColumnThumbnailUri;
     private int mColumnIsSystem;
+    private int mColumnIsApplied;
 
     public static ThemeItem getInstance(Context context, Uri uri) {
         Cursor c = context.getContentResolver().query(uri, null, null, null, null);
+        return getInstance(c);
+    }
+
+    public static ThemeItem getInstance(Cursor c) {
         if (c != null && c.moveToFirst() == true) {
             return new ThemeItem(c);
         }
@@ -64,6 +69,7 @@ public class ThemeItem {
         mColumnNotifRingtoneUri = c.getColumnIndex(ThemeColumns.NOTIFICATION_RINGTONE_URI);
         mColumnThumbnailUri = c.getColumnIndex(ThemeColumns.THUMBNAIL_URI);
         mColumnIsSystem = c.getColumnIndex(ThemeColumns.IS_SYSTEM);
+        mColumnIsApplied = c.getColumnIndex(ThemeColumns.IS_APPLIED);
     }
 
     public void close() {
@@ -249,6 +255,15 @@ public class ThemeItem {
         switch (type) {
             case TYPE_CURSOR:
                 return mCursor.getInt(mColumnIsSystem) == 0;
+        }
+        Log.e(ThemeManager.TAG, "Unknown type " + type);
+        return false;
+    }
+
+    public boolean isApplied() {
+        switch (type) {
+            case TYPE_CURSOR:
+                return mCursor.getInt(mColumnIsApplied) != 0;
         }
         Log.e(ThemeManager.TAG, "Unknown type " + type);
         return false;

@@ -4,6 +4,7 @@ import com.tmobile.thememanager.R;
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.PackageResources;
 import com.tmobile.thememanager.provider.ThemeItem;
+import com.tmobile.thememanager.provider.Themes;
 import com.tmobile.thememanager.utils.BitmapStore;
 import com.tmobile.thememanager.utils.IOUtilities;
 import com.tmobile.thememanager.utils.ResourceUtilities;
@@ -491,6 +492,8 @@ public class ThemeChooser extends Activity {
         if (notificationRingtoneUri != null) {
             setDefaultNotificationRingtone(notificationRingtoneUri);
         }
+
+        Themes.setAppliedTheme(this, theme.getPackageName(), theme.getThemeId());
 
         /* Trigger a configuration change so that all apps will update their UI.  This will also
          * persist the theme for us across reboots. */
