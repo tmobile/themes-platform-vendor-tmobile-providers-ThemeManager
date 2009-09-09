@@ -3,6 +3,7 @@ package com.tmobile.thememanager.activity;
 import com.tmobile.thememanager.R;
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.PackageResources;
+import com.tmobile.thememanager.provider.ThemeItem;
 import com.tmobile.thememanager.utils.BitmapStore;
 import com.tmobile.thememanager.utils.IOUtilities;
 import com.tmobile.thememanager.utils.ResourceUtilities;
@@ -12,7 +13,6 @@ import com.tmobile.thememanager.widget.PreviewContentStub;
 import com.tmobile.thememanager.widget.ThemeAdapter;
 import com.tmobile.thememanager.widget.ThumbnailedBitmapView;
 import com.tmobile.thememanager.widget.PreviewContentStub.OnInflateListener;
-import com.tmobile.thememanager.widget.ThemeAdapter.ThemeItem;
 import com.tmobile.widget.Filmstrip;
 import com.tmobile.widget.HeaderButton;
 
