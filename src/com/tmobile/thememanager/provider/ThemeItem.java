@@ -3,26 +3,18 @@
  */
 package com.tmobile.thememanager.provider;
 
+import com.tmobile.thememanager.provider.Themes.ThemeColumns;
+
 import android.content.Context;
 import android.content.res.CustomTheme;
 import android.database.Cursor;
 import android.net.Uri;
-import android.util.Log;
-
-import com.tmobile.thememanager.ThemeManager;
-import com.tmobile.thememanager.provider.Themes.ThemeColumns;
 
 /**
- * There is plenty of leaky abstraction present in this class as it was ported
- * over from an original design no longer relevant.  Specifically, the interface
- * wraps a cursor but must be positioned prior to usage if more than one row
- * exists.
+ * Simple data access object designed to wrap a cursor returned from any of the
+ * Themes class APIs.  Can be used efficiently with a custom CursorAdapter.
  */
 public class ThemeItem {
-    public static final int TYPE_CURSOR = 0;
-
-    public int type;
-
     private Cursor mCursor;
     private int mColumnThemeId;
     private int mColumnThemePackage;
@@ -53,7 +45,9 @@ public class ThemeItem {
     }
 
     public ThemeItem(Cursor c) {
-        this.type = TYPE_CURSOR;
+        if (c == null || c.getCount() == 0) {
+            throw new IllegalArgumentException("Cursor cannot be null or empty");
+        }
         mCursor = c;
         mColumnThemeId = c.getColumnIndex(ThemeColumns.THEME_ID);
         mColumnThemePackage = c.getColumnIndex(ThemeColumns.THEME_PACKAGE);
@@ -73,19 +67,11 @@ public class ThemeItem {
     }
 
     public void close() {
-        switch (type) {
-            case TYPE_CURSOR:
-                mCursor.close();
-                break;
-        }
+        mCursor.close();
     }
 
     public void setPosition(int position) {
-        switch (type) {
-            case TYPE_CURSOR:
-                mCursor.moveToPosition(position);
-                break;
-        }
+        mCursor.moveToPosition(position);
     }
 
     public Uri getUri(Context context) {
@@ -97,12 +83,7 @@ public class ThemeItem {
     }
 
     public String getName() {
-        switch (type) {
-            case TYPE_CURSOR:
-                return mCursor.getString(mColumnName);
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return null;
+        return mCursor.getString(mColumnName);
     }
 
     /**
@@ -110,59 +91,29 @@ public class ThemeItem {
      * wallpaper and ringtone. For different parts of the UI.
      */
     public String getStyleName() {
-        switch (type) {
-            case TYPE_CURSOR:
-                return mCursor.getString(mColumnStyleName);
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return null;
+        return mCursor.getString(mColumnStyleName);
     }
 
     public String getAuthor() {
-        switch (type) {
-            case TYPE_CURSOR:
-                return mCursor.getString(mColumnAuthor);
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return null;
+        return mCursor.getString(mColumnAuthor);
     }
 
     public boolean isDRMProtected() {
-        switch (type) {
-            case TYPE_CURSOR:
-                return mCursor.getInt(mColumnIsDRM) != 0;
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return true;
+        return mCursor.getInt(mColumnIsDRM) != 0;
     }
 
     /** @deprecated */
     public int getResourceId(Context context) {
-        switch (type) {
-            case TYPE_CURSOR:
-                return CustomTheme.getStyleId(context, getPackageName(),
-                        getThemeId());
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return -1;
+        return CustomTheme.getStyleId(context, getPackageName(),
+                getThemeId());
     }
 
     public String getThemeId() {
-        switch (type) {
-            case TYPE_CURSOR:
-                return mCursor.getString(mColumnThemeId);
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return null;
+        return mCursor.getString(mColumnThemeId);
     }
 
     public String getPackageName() {
-        switch (type) {
-            case TYPE_CURSOR:
-                return mCursor.getString(mColumnThemePackage);
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return null;
+        return mCursor.getString(mColumnThemePackage);
     }
 
     /**
@@ -173,75 +124,35 @@ public class ThemeItem {
      * surrounding this theme package.
      */
     public String getWallpaperIdentifier() {
-        switch (type) {
-            case TYPE_CURSOR:
-                return mCursor.getString(mColumnWallpaperName);
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return null;
+        return mCursor.getString(mColumnWallpaperName);
     }
 
     public Uri getWallpaperUri(Context context) {
-        switch (type) {
-            case TYPE_CURSOR:
-                return parseUriNullSafe(mCursor.getString(mColumnWallpaperUri));
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return null;
+        return parseUriNullSafe(mCursor.getString(mColumnWallpaperUri));
     }
 
     public Uri getRingtoneUri(Context context) {
-        switch (type) {
-            case TYPE_CURSOR:
-                return parseUriNullSafe(mCursor.getString(mColumnRingtoneUri));
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return null;
+        return parseUriNullSafe(mCursor.getString(mColumnRingtoneUri));
     }
 
     public String getRingtoneName() {
-        switch (type) {
-            case TYPE_CURSOR:
-                return mCursor.getString(mColumnRingtoneName);
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return null;
+        return mCursor.getString(mColumnRingtoneName);
     }
 
     public Uri getNotificationRingtoneUri(Context context) {
-        switch (type) {
-            case TYPE_CURSOR:
-                return parseUriNullSafe(mCursor.getString(mColumnNotifRingtoneUri));
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return null;
+        return parseUriNullSafe(mCursor.getString(mColumnNotifRingtoneUri));
     }
 
     public String getNotificationRingtoneName() {
-        switch (type) {
-            case TYPE_CURSOR:
-                return mCursor.getString(mColumnNotifRingtoneName);
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return null;
+        return mCursor.getString(mColumnNotifRingtoneName);
     }
 
     public Uri getThumbnailUri() {
-        switch (type) {
-            case TYPE_CURSOR:
-                return parseUriNullSafe(mCursor.getString(mColumnThumbnailUri));
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return null;
+        return parseUriNullSafe(mCursor.getString(mColumnThumbnailUri));
     }
 
     /** @deprecated */
     public String getSoundPackName() {
-        switch (type) {
-            case TYPE_CURSOR:
-                return null;
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
         return null;
     }
 
@@ -252,43 +163,27 @@ public class ThemeItem {
      * @return Returns true if the theme can be uninstalled.
      */
     public boolean isRemovable() {
-        switch (type) {
-            case TYPE_CURSOR:
-                return mCursor.getInt(mColumnIsSystem) == 0;
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return false;
+        return mCursor.getInt(mColumnIsSystem) == 0;
     }
 
     public boolean isApplied() {
-        switch (type) {
-            case TYPE_CURSOR:
-                return mCursor.getInt(mColumnIsApplied) != 0;
-        }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return false;
+        return mCursor.getInt(mColumnIsApplied) != 0;
     }
 
     public boolean equals(CustomTheme theme) {
-        switch (type) {
-            case TYPE_CURSOR:
-                if (theme == null) {
-                    return false;
-                }
-                if (getPackageName().equals(theme.getThemePackageName()) == false) {
-                    return false;
-                }
-                return theme.getThemeId().equals(getThemeId());
+        if (theme == null) {
+            return false;
         }
-        Log.e(ThemeManager.TAG, "Unknown type " + type);
-        return false;
+        if (getPackageName().equals(theme.getThemePackageName()) == false) {
+            return false;
+        }
+        return theme.getThemeId().equals(getThemeId());
     }
 
     public String toString() {
         StringBuilder b = new StringBuilder();
 
         b.append('{');
-        b.append("type=").append(type).append("; ");
         b.append("pkg=").append(getPackageName()).append("; ");
         b.append("themeId=").append(getThemeId()).append("; ");
         b.append("name=").append(getName()).append("; ");
