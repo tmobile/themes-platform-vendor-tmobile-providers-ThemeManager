@@ -51,6 +51,9 @@
     <!-- Description of an application permission, allowing access to DRM-protected media resources of theme packages. -->
     <string name="permdesc_access_DrmThemeResources">Allows an application read access to DRM-protected media resources of Theme Packages</string>
 
+    <string name="permlab_set_theme">Set globally applied theme</string>
+    <string name="permdesc_set_theme">Allows an application to change your phone's visual theme.</string>
+
     <string name="delete_theme">Delete theme</string>
 
     <string name="delete_dialog_title">Delete theme</string>

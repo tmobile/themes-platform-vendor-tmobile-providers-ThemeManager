@@ -5,6 +5,12 @@
     android:sharedUserId="com.tmobile.thememanager"
     package="com.tmobile.thememanager">
 
+    <!-- Allows windowless application of themes. -->
+    <permission android:name="com.tmobile.permission.CHANGE_THEME"
+        android:label="@string/permlab_set_theme"
+        android:description="@string/permdesc_set_theme"
+        android:protectionLevel="dangerous" />
+
     <!-- Allows access to DRM-protected media resources in theme packages. -->
     <permission android:name="com.tmobile.permission.ACCESS_DRM_THEME"
         android:label="@string/permlab_access_DrmThemeResources"
@@ -95,6 +101,18 @@
 
         <provider android:name=".provider.ThemesProvider"
             android:authorities="com.tmobile.thememanager.themes" />
+
+        <receiver
+            android:name=".receiver.ChangeThemeReceiver"
+            android:permission="com.tmobile.permission.CHANGE_THEME">
+
+            <intent-filter android:priority="100">
+                <action android:name="com.tmobile.intent.action.CHANGE_THEME" />
+                <data android:mimeType="vnd.tmobile.cursor.item/theme" />
+                <data android:mimeType="vnd.tmobile.cursor.item/style" />
+            </intent-filter>
+
+        </receiver>
 
         <receiver android:name=".receiver.BootReceiver">
             <intent-filter>
