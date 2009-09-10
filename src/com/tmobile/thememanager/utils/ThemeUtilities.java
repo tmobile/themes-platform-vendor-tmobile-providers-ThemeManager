@@ -26,7 +26,7 @@ public class ThemeUtilities {
                 Uri.fromParts("package", "com.tmobile.thememanager.activity", null));
         context.sendBroadcast(intent);
         
-        Themes.setAppliedTheme(context, theme.getPackageName(), theme.getThemeId());
+        Themes.markAppliedTheme(context, theme.getPackageName(), theme.getThemeId());
 
         /* Trigger a configuration change so that all apps will update their UI.  This will also
          * persist the theme for us across reboots. */

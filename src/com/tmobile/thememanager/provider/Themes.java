@@ -1,9 +1,12 @@
 package com.tmobile.thememanager.provider;
 
+import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.utils.FileUtilities;
 
+import android.Manifest;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.ThemeInfo;
@@ -131,7 +134,7 @@ public class Themes {
                 new String[] { packageName });
     }
 
-    public static void setAppliedTheme(Context context, String packageName, String themeId) {
+    public static void markAppliedTheme(Context context, String packageName, String themeId) {
         ContentValues values = new ContentValues();
         values.put(ThemeColumns.IS_APPLIED, 0);
         context.getContentResolver().update(ThemeColumns.CONTENT_PLURAL_URI, values, null, null);
@@ -140,6 +143,15 @@ public class Themes {
                 ThemeColumns.THEME_PACKAGE + " = ? AND " +
                     ThemeColumns.THEME_ID + " = ?",
                 new String[] { packageName, themeId });
+    }
+
+    /**
+     * Request a theme change by broadcasting to the ThemeManager. Must hold
+     * permission {@link ThemeManager#PERMISSION_CHANGE_THEME}.
+     */
+    public static void changeTheme(Context context, Uri themeUri) {
+        context.sendOrderedBroadcast(new Intent(ThemeManager.ACTION_CHANGE_THEME, themeUri), 
+                Manifest.permission.CHANGE_CONFIGURATION);
     }
 
     public interface ThemeColumns {

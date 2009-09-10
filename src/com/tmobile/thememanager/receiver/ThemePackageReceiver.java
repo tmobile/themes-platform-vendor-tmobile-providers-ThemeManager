@@ -102,7 +102,7 @@ public class ThemePackageReceiver extends BroadcastReceiver {
             if (updateConfiguration && !deferConfigurationUpdate) {
                 removedThemeId = config.customTheme.getThemeId();
                 CustomTheme defaultTheme = CustomTheme.getDefault();
-                Themes.setAppliedTheme(context, defaultTheme.getThemePackageName(),
+                Themes.markAppliedTheme(context, defaultTheme.getThemePackageName(),
                         defaultTheme.getThemeId());
                 config.customTheme = defaultTheme;
                 am.updateConfiguration(config);
@@ -157,7 +157,7 @@ public class ThemePackageReceiver extends BroadcastReceiver {
             ActivityManager am = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
             Configuration config = am.getConfiguration();
             config.customTheme = new CustomTheme(removedThemeId, pkg);
-            Themes.setAppliedTheme(context, pkg, removedThemeId);
+            Themes.markAppliedTheme(context, pkg, removedThemeId);
             am.updateConfiguration(config);
         }
         removedThemeId = null;
