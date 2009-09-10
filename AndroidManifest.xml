@@ -56,8 +56,7 @@
 
         <activity
             android:name=".activity.StyleChooser"
-            android:label="@string/style_chooser_title"
-            android:theme="@android:style/Theme.Dialog">
+            android:label="@string/style_chooser_title">
 
             <intent-filter android:label="@string/style_intent_title">
                 <action android:name="com.tmobile.intent.action.SET_THEME" />

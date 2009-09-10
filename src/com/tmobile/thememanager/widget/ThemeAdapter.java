@@ -1,7 +1,9 @@
 package com.tmobile.thememanager.widget;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.res.CustomTheme;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.widget.CursorAdapter;
 import android.database.Cursor;
@@ -53,6 +55,42 @@ public abstract class ThemeAdapter extends CursorAdapter {
     public void notifyDataSetInvalidated() {
         mThemeDAO = null;
         super.notifyDataSetInvalidated();
+    }
+
+    /**
+     * Utility function to work out which theme item should be shown as checked.
+     * 
+     * <p>This method is implemented with way too much allocation.</p>
+     * 
+     * @param existingUri Requested existing URI if provided via Intent extras.
+     */
+    public int findExistingOrCurrentItem(Context context, Uri existingUri) {
+        if (existingUri != null) {
+            return findItem(context, existingUri);
+        } else {
+            ThemeItem current = ThemeItem.getInstance(Themes.getAppliedTheme(context));
+            if (current != null) {
+                try {
+                    return findItem(context, current.getUri(context));
+                } finally {
+                    current.close();
+                }
+            } else {
+                return -1;
+            }
+        }
+    }
+
+    public int findItem(Context context, Uri uri) {
+        if (uri == null) return -1;
+        int n = getCount();
+        while (n-- > 0) {
+            ThemeItem item = getTheme(n);
+            if (uri.equals(item.getUri(context)) == true) {
+                return n;
+            }
+        }
+        return -1;
     }
 
     public int findItem(CustomTheme theme) {

@@ -9,6 +9,7 @@ import com.tmobile.thememanager.utils.BitmapStore;
 import com.tmobile.thememanager.utils.IOUtilities;
 import com.tmobile.thememanager.utils.ResourceUtilities;
 import com.tmobile.thememanager.utils.ThemeBitmapStore;
+import com.tmobile.thememanager.utils.ThemeUtilities;
 import com.tmobile.thememanager.widget.CheckOverlay;
 import com.tmobile.thememanager.widget.PreviewContentStub;
 import com.tmobile.thememanager.widget.ThemeAdapter;
@@ -206,7 +207,8 @@ public class ThemeChooser extends Activity {
                             mAdapter = new ThumbnailAdapter(ThemeChooser.this);
                             int defaultThemeIndex = mAdapter.findItem(CustomTheme.getDefault());
                             mAM = (ActivityManager)getSystemService(ACTIVITY_SERVICE);
-                            applyTheme(mAdapter.getTheme(defaultThemeIndex));
+                            ThemeUtilities.applyTheme(ThemeChooser.this,
+                                    mAdapter.getTheme(defaultThemeIndex));
                             finish();
                         }
                     })
@@ -274,13 +276,13 @@ public class ThemeChooser extends Activity {
     }
 
     private void selectAppliedTheme(boolean setSelection) {
-        Configuration config = mAM.getConfiguration();
-        int position = mAdapter.findItem(config.customTheme);
-        if (position >= 0) {
+        int existingPos = mAdapter.findExistingOrCurrentItem(this,
+                (Uri)getIntent().getParcelableExtra(ThemeManager.EXTRA_THEME_EXISTING_URI));
+        if (existingPos >= 0) {
             if (setSelection == true) {
-                mFilmstrip.setSelection(position);
+                mFilmstrip.setSelection(existingPos);
             }
-            mAdapter.setAppliedPosition(position);
+            mAdapter.setAppliedPosition(existingPos);
         }
     }
 
@@ -290,7 +292,7 @@ public class ThemeChooser extends Activity {
             ThemeItem theme = getSelectedThemeItem();
             setResult(RESULT_OK, new Intent().setData(theme.getUri(ThemeChooser.this)));
             finish();
-            applyTheme(theme);
+            ThemeUtilities.applyTheme(ThemeChooser.this, theme);
         }
     };
 
@@ -467,90 +469,8 @@ public class ThemeChooser extends Activity {
             if (defaultPos >= 0) {
                 mAdapter.setAppliedPosition(defaultPos);
                 mFilmstrip.setSelection(defaultPos);
-                applyTheme(mAdapter.getTheme(defaultPos));
+                ThemeUtilities.applyTheme(this, mAdapter.getTheme(defaultPos));
             }
-        }
-    }
-
-    private void applyTheme(ThemeItem theme) {
-        // New theme is applied, hence reset the count to 0.
-        Intent intent = new Intent(Intent.ACTION_APP_LAUNCH_FAILURE_RESET,
-                Uri.fromParts("package", "com.tmobile.thememanager.activity", null));
-        sendBroadcast(intent);
-
-        Uri wallpaperUri = theme.getWallpaperUri(this);
-        if (wallpaperUri != null) {
-            setWallpaper(wallpaperUri);
-        }
-        
-        Uri ringtoneUri = theme.getRingtoneUri(this);
-        if (ringtoneUri != null) {
-            setDefaultRingtone(ringtoneUri);
-        }
-        
-        Uri notificationRingtoneUri = theme.getNotificationRingtoneUri(this);
-        if (notificationRingtoneUri != null) {
-            setDefaultNotificationRingtone(notificationRingtoneUri);
-        }
-
-        Themes.setAppliedTheme(this, theme.getPackageName(), theme.getThemeId());
-
-        /* Trigger a configuration change so that all apps will update their UI.  This will also
-         * persist the theme for us across reboots. */
-        updateConfiguration(theme);
-
-        /* Broadcast theme change. */
-        sendBroadcast(new Intent(ThemeManager.ACTION_THEME_CHANGED, theme.getUri(this)));
-    }
-
-    private void updateConfiguration(ThemeItem theme) {
-        Configuration currentConfig = mAM.getConfiguration();
-
-//        if (TextUtils.isEmpty(theme.getThemeId())) {
-//            /* Reset to system default. */
-//            currentConfig.customTheme = CustomTheme.getDefault();
-//        } else {
-            /* Set the runtime user-provided theme. */
-            currentConfig.customTheme = new CustomTheme(
-                    theme.getThemeId(),
-                    theme.getPackageName());
-//        }
-
-        mAM.updateConfiguration(currentConfig);
-    }
-
-    private void setWallpaper(Uri uri) {
-        try {
-            InputStream in = getContentResolver().openInputStream(uri);
-            try {
-                setWallpaper(in);
-            } finally {
-                IOUtilities.close(in);
-            }
-        } catch (Exception e) {
-            Log.e(ThemeManager.TAG, "Could not set wallpaper", e);
-        }
-    }
-
-    private void setDefaultRingtone(Uri ringtoneUri) {
-        if (ThemeManager.DEBUG) {
-            Log.i(ThemeManager.TAG, "ringtoneUri=" + ringtoneUri);
-        }
-
-        if (ringtoneUri != null) {
-            RingtoneManager.setActualDefaultRingtoneUri(this, RingtoneManager.TYPE_RINGTONE,
-                    ringtoneUri);
-        }
-    }
-
-    private void setDefaultNotificationRingtone(Uri ringtoneUri) {
-        if (ThemeManager.DEBUG) {
-            Log.i(ThemeManager.TAG, "ringtoneUri=" + ringtoneUri);
-        }
-
-        if (ringtoneUri != null) {
-            RingtoneManager.setActualDefaultRingtoneUri(this, RingtoneManager.TYPE_NOTIFICATION,
-                    ringtoneUri);
         }
     }
 
