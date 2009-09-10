@@ -4,9 +4,7 @@ import com.tmobile.thememanager.R;
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.PackageResources;
 import com.tmobile.thememanager.provider.ThemeItem;
-import com.tmobile.thememanager.provider.Themes;
 import com.tmobile.thememanager.utils.BitmapStore;
-import com.tmobile.thememanager.utils.IOUtilities;
 import com.tmobile.thememanager.utils.ResourceUtilities;
 import com.tmobile.thememanager.utils.ThemeBitmapStore;
 import com.tmobile.thememanager.utils.ThemeUtilities;
@@ -28,11 +26,9 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ThemeInfo;
-import android.content.res.Configuration;
 import android.content.res.CustomTheme;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -46,9 +42,6 @@ import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.AdapterView.OnItemSelectedListener;
-
-import java.io.InputStream;
-import java.io.IOException;
 
 public class ThemeChooser extends Activity {
 

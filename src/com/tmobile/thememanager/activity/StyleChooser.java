@@ -3,7 +3,6 @@ package com.tmobile.thememanager.activity;
 import com.tmobile.thememanager.R;
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.ThemeItem;
-import com.tmobile.thememanager.provider.Themes;
 import com.tmobile.thememanager.utils.ThemeUtilities;
 import com.tmobile.thememanager.widget.ThemeAdapter;
 
