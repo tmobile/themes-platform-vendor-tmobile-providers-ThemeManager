@@ -74,6 +74,14 @@ public class ThemeItem {
         mCursor.moveToPosition(position);
     }
 
+    public int getPosition() {
+        return mCursor.getPosition();
+    }
+
+    public int getCount() {
+        return mCursor.getCount();
+    }
+
     public Uri getUri(Context context) {
         return Themes.getThemeUri(context, getPackageName(), getThemeId());
     }
