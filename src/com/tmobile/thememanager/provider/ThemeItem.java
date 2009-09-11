@@ -33,8 +33,11 @@ public class ThemeItem {
     private int mColumnIsApplied;
 
     public static ThemeItem getInstance(Context context, Uri uri) {
-        Cursor c = context.getContentResolver().query(uri, null, null, null, null);
-        return getInstance(c);
+        if (uri != null) {
+            Cursor c = context.getContentResolver().query(uri, null, null, null, null);
+            return getInstance(c);
+        }
+        return null;
     }
 
     public static ThemeItem getInstance(Cursor c) {
