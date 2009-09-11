@@ -21,7 +21,11 @@ public class ChangeThemeReceiver extends BroadcastReceiver {
             Log.e(ThemeManager.TAG, "Could not retrieve theme item for uri=" + intent.getData());
             return;
         }
-        ThemeUtilities.applyTheme(context, item);
+        try {
+            ThemeUtilities.applyTheme(context, item);
+        } finally {
+            item.close();
+        }
 
         setResult(Activity.RESULT_OK, null, null);
         abortBroadcast();
