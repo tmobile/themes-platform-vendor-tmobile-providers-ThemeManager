@@ -42,4 +42,8 @@ public interface ThemeManager {
      * choosers. If null, will use the current global theme.
      */
     public static final String EXTRA_THEME_EXISTING_URI = "com.tmobile.intent.extra.theme.EXISTING_URI";
+
+    public static final String EXTRA_WALLPAPER_URI = "com.tmobile.intent.extra.theme.WALLPAPER_URI";
+    public static final String EXTRA_RINGTONE_URI = "com.tmobile.intent.extra.theme.RINGTONE_URI";
+    public static final String EXTRA_NOTIFICATION_RINGTONE_URI = "com.tmobile.intent.extra.theme.NOTIFICATION_RINGTONE_URI";
 }

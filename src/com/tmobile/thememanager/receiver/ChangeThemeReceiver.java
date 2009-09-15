@@ -8,6 +8,7 @@ import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.util.Log;
 
 public class ChangeThemeReceiver extends BroadcastReceiver {
@@ -22,7 +23,12 @@ public class ChangeThemeReceiver extends BroadcastReceiver {
             return;
         }
         try {
-            ThemeUtilities.applyTheme(context, item);
+            Uri wallpaperUri = (Uri)intent.getParcelableExtra(ThemeManager.EXTRA_WALLPAPER_URI);
+            Uri ringtoneUri = (Uri)intent.getParcelableExtra(ThemeManager.EXTRA_RINGTONE_URI);
+            Uri notificationRingtoneUri =
+                (Uri)intent.getParcelableExtra(ThemeManager.EXTRA_NOTIFICATION_RINGTONE_URI);
+            ThemeUtilities.applyTheme(context, item, wallpaperUri, ringtoneUri,
+                    notificationRingtoneUri);
         } finally {
             item.close();
         }

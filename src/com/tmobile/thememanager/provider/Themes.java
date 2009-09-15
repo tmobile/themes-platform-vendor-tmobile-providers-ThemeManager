@@ -150,8 +150,17 @@ public class Themes {
      * permission {@link ThemeManager#PERMISSION_CHANGE_THEME}.
      */
     public static void changeTheme(Context context, Uri themeUri) {
-        context.sendOrderedBroadcast(new Intent(ThemeManager.ACTION_CHANGE_THEME, themeUri), 
-                Manifest.permission.CHANGE_CONFIGURATION);
+        changeTheme(context, new Intent(ThemeManager.ACTION_CHANGE_THEME, themeUri));
+    }
+
+    /**
+     * Alternate API to {@link #changeTheme(Context, Uri)} which allows you to
+     * customize the intent that is delivered. This is used to access more
+     * advanced functionality like conditionalizing certain parts of the theme
+     * that is going to be applied.
+     */
+    public static void changeTheme(Context context, Intent intent) {
+        context.sendOrderedBroadcast(intent, Manifest.permission.CHANGE_CONFIGURATION);
     }
 
     public interface ThemeColumns {

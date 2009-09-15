@@ -41,21 +41,44 @@ public class ThemeUtilities {
      * Applies a full theme.  This is a superset of applyStyle.
      */
     public static void applyTheme(Context context, ThemeItem theme) {
-        Uri wallpaperUri = theme.getWallpaperUri(context);
+        applyTheme(context, theme, null, null, null);
+    }
+
+    /**
+     * Extended API to {@link #applyTheme(Context,ThemeItem)} which allows the
+     * caller to override certain components of a theme with user-supplied
+     * values.
+     */
+    public static void applyTheme(Context context, ThemeItem theme,
+            Uri wallpaperUri, Uri ringtoneUri, Uri notificationRingtoneUri) {
+        if (ThemeManager.DEBUG) {
+            Log.i(ThemeManager.TAG, "applyTheme: theme=" + theme.getUri(context) +
+                    ", wallpaperUri=" + wallpaperUri +
+                    ", ringtoneUri=" + ringtoneUri +
+                    ", notificationRingtoneUri=" + notificationRingtoneUri);
+        }
+
+        if (wallpaperUri == null) {
+            wallpaperUri = theme.getWallpaperUri(context);
+        }
         if (wallpaperUri != null) {
             setWallpaper(context, wallpaperUri);
         }
-        
-        Uri ringtoneUri = theme.getRingtoneUri(context);
+
+        if (ringtoneUri == null) {
+            ringtoneUri = theme.getRingtoneUri(context);
+        }
         if (ringtoneUri != null) {
             setDefaultRingtone(context, ringtoneUri);
         }
-        
-        Uri notificationRingtoneUri = theme.getNotificationRingtoneUri(context);
+
+        if (notificationRingtoneUri == null) {
+            notificationRingtoneUri = theme.getNotificationRingtoneUri(context);
+        }
         if (notificationRingtoneUri != null) {
             setDefaultNotificationRingtone(context, notificationRingtoneUri);
         }
-        
+
         applyStyle(context, theme);
     }
 
