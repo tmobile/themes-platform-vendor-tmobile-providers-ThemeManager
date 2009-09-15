@@ -1,6 +1,3 @@
-/**
- *
- */
 package com.tmobile.thememanager.provider;
 
 import com.tmobile.thememanager.provider.Themes.ThemeColumns;
@@ -14,8 +11,7 @@ import android.net.Uri;
  * Simple data access object designed to wrap a cursor returned from any of the
  * Themes class APIs.  Can be used efficiently with a custom CursorAdapter.
  */
-public class ThemeItem {
-    private Cursor mCursor;
+public class ThemeItem extends AbstractDAOItem {
     private int mColumnThemeId;
     private int mColumnThemePackage;
     private int mColumnName;
@@ -32,26 +28,24 @@ public class ThemeItem {
     private int mColumnIsSystem;
     private int mColumnIsApplied;
 
-    public static ThemeItem getInstance(Context context, Uri uri) {
-        if (uri != null) {
-            Cursor c = context.getContentResolver().query(uri, null, null, null, null);
-            return getInstance(c);
+    private static final AbstractDAOItem.Creator<ThemeItem> CREATOR =
+            new AbstractDAOItem.Creator<ThemeItem>() {
+        @Override
+        public ThemeItem init(Cursor c) {
+            return new ThemeItem(c);
         }
-        return null;
+    };
+
+    public static ThemeItem getInstance(Context context, Uri uri) {
+        return CREATOR.newInstance(context, uri);
     }
 
     public static ThemeItem getInstance(Cursor c) {
-        if (c != null && c.moveToFirst() == true) {
-            return new ThemeItem(c);
-        }
-        return null;
+        return CREATOR.newInstance(c);
     }
 
     public ThemeItem(Cursor c) {
-        if (c == null || c.getCount() == 0) {
-            throw new IllegalArgumentException("Cursor cannot be null or empty");
-        }
-        mCursor = c;
+        super(c);
         mColumnThemeId = c.getColumnIndex(ThemeColumns.THEME_ID);
         mColumnThemePackage = c.getColumnIndex(ThemeColumns.THEME_PACKAGE);
         mColumnName = c.getColumnIndex(ThemeColumns.NAME);
@@ -69,28 +63,9 @@ public class ThemeItem {
         mColumnIsApplied = c.getColumnIndex(ThemeColumns.IS_APPLIED);
     }
 
-    public void close() {
-        mCursor.close();
-    }
-
-    public void setPosition(int position) {
-        mCursor.moveToPosition(position);
-    }
-
-    public int getPosition() {
-        return mCursor.getPosition();
-    }
-
-    public int getCount() {
-        return mCursor.getCount();
-    }
-
+    @Override
     public Uri getUri(Context context) {
         return Themes.getThemeUri(context, getPackageName(), getThemeId());
-    }
-
-    private Uri parseUriNullSafe(String uriString) {
-        return (uriString != null ? Uri.parse(uriString) : null);
     }
 
     public String getName() {

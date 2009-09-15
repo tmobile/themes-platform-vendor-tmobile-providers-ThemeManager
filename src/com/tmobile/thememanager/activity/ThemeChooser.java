@@ -10,6 +10,7 @@ import com.tmobile.thememanager.utils.ThemeBitmapStore;
 import com.tmobile.thememanager.utils.ThemeUtilities;
 import com.tmobile.thememanager.widget.CheckOverlay;
 import com.tmobile.thememanager.widget.PreviewContentStub;
+import com.tmobile.thememanager.widget.AbstractDAOItemAdapter;
 import com.tmobile.thememanager.widget.ThemeAdapter;
 import com.tmobile.thememanager.widget.ThumbnailedBitmapView;
 import com.tmobile.thememanager.widget.PreviewContentStub.OnInflateListener;
@@ -449,7 +450,7 @@ public class ThemeChooser extends Activity {
         int oldSelection = mFilmstrip.getSelectedItemPosition();
         boolean resetToDefault = (oldSelection == mAdapter.getAppliedPosition());
 
-        int defaultPos = mAdapter.deleteThemeItem(oldSelection);
+        int defaultPos = mAdapter.deleteItem(oldSelection);
 
         if (resetToDefault) {
             if (defaultPos == -1) {
