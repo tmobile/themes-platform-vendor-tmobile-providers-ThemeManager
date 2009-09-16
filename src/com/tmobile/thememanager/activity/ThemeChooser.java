@@ -14,8 +14,6 @@ import com.tmobile.thememanager.widget.AbstractDAOItemAdapter;
 import com.tmobile.thememanager.widget.ThemeAdapter;
 import com.tmobile.thememanager.widget.ThumbnailedBitmapView;
 import com.tmobile.thememanager.widget.PreviewContentStub.OnInflateListener;
-import com.tmobile.widget.Filmstrip;
-import com.tmobile.widget.HeaderButton;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -40,6 +38,8 @@ import android.view.*;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.Gallery;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.AdapterView.OnItemSelectedListener;
@@ -49,9 +49,9 @@ public class ThemeChooser extends Activity {
     private static final int DELETE_DIALOG = 2;
     private static final int APPLY_DEFAULT_THEME_DIALOG = 3;
 
-    private HeaderButton mApplyButton;
+    private Button mApplyButton;
 
-    private Filmstrip mFilmstrip;
+    private Gallery mFilmstrip;
     private ThumbnailAdapter mAdapter;
 
     private Bitmap mPreviewCacheBitmap;
@@ -78,10 +78,10 @@ public class ThemeChooser extends Activity {
         mPreviewContentStub = (PreviewContentStub)findViewById(R.id.preview_content_stub);
         mPreviewContentStub.setOnInflateListener(mInflateListener);
         
-        mFilmstrip = (Filmstrip)findViewById(R.id.filmstrip);
+        mFilmstrip = (Gallery)findViewById(R.id.filmstrip);
         mPreviewCache = (ImageView)findViewById(R.id.preview_image);
-        mApplyButton = (HeaderButton)findViewById(R.id.preview_header);
-        mApplyButton.getButton().setOnClickListener(mClickListener);
+        mApplyButton = (Button)findViewById(R.id.apply_btn);
+        mApplyButton.setOnClickListener(mClickListener);
 
         mAM = (ActivityManager)getSystemService(ACTIVITY_SERVICE);
 

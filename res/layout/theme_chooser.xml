@@ -5,17 +5,34 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
 
-    <com.tmobile.widget.HeaderButton
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/preview_header"
-        android:headerText="@string/set_theme"
-        android:buttonText="@string/btn_apply" />
+        android:minHeight="50dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:gravity="center_vertical">
 
-    <com.tmobile.widget.Filmstrip
+        <TextView
+            android:layout_width="0px"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="@string/set_theme" />
+
+        <Button
+            android:id="@+id/apply_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_apply" />
+
+    </LinearLayout>
+
+    <Gallery
         android:id="@+id/filmstrip"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:background="@android:color/black"
         />
 
     <FrameLayout

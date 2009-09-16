@@ -3,10 +3,10 @@ package com.tmobile.thememanager;
 
 import com.tmobile.thememanager.activity.ThemeChooser;
 import com.tmobile.thememanager.R;
-import com.tmobile.widget.HeaderButton;
 
 import android.os.SystemClock;
 import android.view.KeyEvent;
+import android.widget.Button;
 import android.test.TouchUtils;
 import android.util.Log;
 
@@ -104,9 +104,9 @@ public class ThemeChooserTestCase extends ThemeInstrumentationTestBase<ThemeChoo
     }
 
     protected boolean tap(int id) {
-        HeaderButton view = (HeaderButton)mActivity.findViewById(id);
+        Button view = (Button)mActivity.findViewById(id);
         if (view != null) {
-            TouchUtils.clickView(this, view.getButton());
+            TouchUtils.clickView(this, view);
             return true;
         }
         return false;
@@ -116,7 +116,7 @@ public class ThemeChooserTestCase extends ThemeInstrumentationTestBase<ThemeChoo
         Log.v(TAG, "Test theme apply: " + PAK_NAMES[themePos]);
 
         mStartTime = SystemClock.uptimeMillis();
-        tap(R.id.preview_header);
+        tap(R.id.apply_btn);
         mEndTime = SystemClock.uptimeMillis();
     }
 

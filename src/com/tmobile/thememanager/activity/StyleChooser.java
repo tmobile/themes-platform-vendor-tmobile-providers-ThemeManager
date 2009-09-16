@@ -63,7 +63,7 @@ public class StyleChooser extends Activity implements OnItemClickListener {
 
         @Override
         public View newView(Context context, Cursor cursor, ViewGroup parent) {
-            return getInflater().inflate(android.R.layout.tmobile_list_item_label_checkable,
+            return getInflater().inflate(android.R.layout.select_dialog_singlechoice,
                     parent, false);
         }
     }

@@ -2,7 +2,6 @@
 package com.tmobile.thememanager;
 
 import com.tmobile.thememanager.utils.FileUtilities;
-import com.tmobile.widget.HeaderButton;
 
 import android.app.Activity;
 import android.app.Instrumentation;
@@ -11,7 +10,6 @@ import android.test.ActivityInstrumentationTestCase2;
 import android.test.TouchUtils;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 
 import java.io.File;
 import java.io.IOException;
