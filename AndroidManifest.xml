@@ -124,7 +124,6 @@
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
                 <action android:name="android.intent.action.PACKAGE_REMOVED" />
-                <action android:name="com.tmobile.intent.action.THEME_PACKAGE_UPDATED" />
                 <category android:name="com.tmobile.intent.category.THEME_PACKAGE_INSTALL_STATE_CHANGE" />
                 <data android:scheme="package" />
             </intent-filter>
