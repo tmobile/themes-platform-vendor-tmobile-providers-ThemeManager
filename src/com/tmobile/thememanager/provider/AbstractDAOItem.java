@@ -50,8 +50,12 @@ public abstract class AbstractDAOItem {
         }
 
         public T newInstance(Cursor c) {
-            if (c != null && c.moveToFirst() == true) {
-                return init(c);
+            if (c != null) {
+                if (c.moveToFirst() == true) {
+                    return init(c);
+                } else {
+                    c.close();
+                }
             }
             return null;
         }
