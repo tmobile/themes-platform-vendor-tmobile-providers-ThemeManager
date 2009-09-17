@@ -21,6 +21,13 @@ public class PackageResources {
 
     private PackageResources() {}
 
+    private static Uri makeUri(Uri baseUri, String packageName, long id) {
+        return baseUri.buildUpon()
+            .appendPath(packageName)
+            .appendPath(String.valueOf(id))
+            .build();
+    }
+
     /****************************************************/
     /* Ringtones section                                */
     /****************************************************/
@@ -46,8 +53,7 @@ public class PackageResources {
             }
             
             long _id = c.getLong(0);
-
-            return ContentUris.withAppendedId(RingtoneColumns.CONTENT_URI, _id);
+            return makeUri(RingtoneColumns.CONTENT_URI, packageName, _id);
         } finally {
             c.close();
         }
@@ -143,8 +149,7 @@ public class PackageResources {
             }
             
             long _id = c.getLong(0);
-
-            return ContentUris.withAppendedId(ImageColumns.CONTENT_URI, _id);
+            return makeUri(ImageColumns.CONTENT_URI, packageName, _id);
         } finally {
             c.close();
         }

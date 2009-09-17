@@ -32,6 +32,7 @@ import android.view.WindowManager;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,6 +55,9 @@ public class PackageResourcesProvider extends ContentProvider
     /* Cache AssetManager objects to speed up ringtone manipulation. */
     private static final Map<String, Resources> mLookUpTable =
         new HashMap<String, Resources>();
+
+    /* This used to interpret singular URI patterns, like TYPE_RINGTONE and TYPE_IMAGE. */
+    private static final String SINGULAR_QUERY_SELECTION = "package=? AND _id=?";
 
     private static class OpenDatabaseHelper extends SQLiteOpenHelper {
         private static final String DATABASE_NAME = "package_idmap.db";
@@ -188,9 +192,10 @@ public class PackageResourcesProvider extends ContentProvider
             case TYPE_RINGTONES:
             case TYPE_RINGTONE:
                 if (type == TYPE_RINGTONE) {
-                    selection = DatabaseUtilities.appendSelection(selection, "_id=?");
-                    selectionArgs = DatabaseUtilities.appendSelectionArgs(selectionArgs, 
-                            uri.getLastPathSegment());
+                    selection = DatabaseUtilities.appendSelection(selection,
+                            SINGULAR_QUERY_SELECTION);
+                    selectionArgs = DatabaseUtilities.appendSelectionArgs(selectionArgs,
+                            DatabaseUtilities.getLastTwoPathSegments(uri));
                 }
                 return db.query("ringtone_map", projection, selection, selectionArgs, null, null,
                         sortOrder);
@@ -233,9 +238,9 @@ public class PackageResourcesProvider extends ContentProvider
                         RingtoneColumns.ASSET_PATH,
                         RingtoneColumns.IS_DRM,
                         RingtoneColumns.LOCKED_ZIPFILE_PATH
-                }, "_id=?", new String[] {
-                    uri.getLastPathSegment()
-                }, null, null, null);
+                }, SINGULAR_QUERY_SELECTION,
+                DatabaseUtilities.getLastTwoPathSegments(uri),
+                null, null, null);
                 if (c == null) {
                     return null;
                 }
@@ -384,9 +389,9 @@ public class PackageResourcesProvider extends ContentProvider
                             ImageColumns.ASSET_PATH,
                             ImageColumns.IS_DRM,
                             ImageColumns.LOCKED_ZIPFILE_PATH
-            }, "_id=?", new String[] {
-                            uri.getLastPathSegment()
-            }, null, null, null);
+            }, SINGULAR_QUERY_SELECTION,
+            DatabaseUtilities.getLastTwoPathSegments(uri),
+            null, null, null);
         if (c == null) {
             return null;
         }
@@ -425,9 +430,9 @@ public class PackageResourcesProvider extends ContentProvider
     static {
         /* See PackageResources#makeRingtoneUri. */
         URI_MATCHER.addURI(PackageResources.AUTHORITY, "ringtones", TYPE_RINGTONES);
-        URI_MATCHER.addURI(PackageResources.AUTHORITY, "ringtone/#", TYPE_RINGTONE);
+        URI_MATCHER.addURI(PackageResources.AUTHORITY, "ringtone/*/#", TYPE_RINGTONE);
 
         URI_MATCHER.addURI(PackageResources.AUTHORITY, "images", TYPE_IMAGES);
-        URI_MATCHER.addURI(PackageResources.AUTHORITY, "image/#", TYPE_IMAGE);
+        URI_MATCHER.addURI(PackageResources.AUTHORITY, "image/*/#", TYPE_IMAGE);
     }
 }
