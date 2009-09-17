@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.ThemeInfo;
+import android.content.res.CustomTheme;
 import android.database.Cursor;
 import android.net.Uri;
 
@@ -25,6 +26,11 @@ public class Themes {
         return ThemeColumns.CONTENT_URI.buildUpon()
             .appendPath(packageName)
             .appendPath(themeId).build();
+    }
+    
+    public static Uri getDefaultThemeUri(Context context) {
+        CustomTheme def = CustomTheme.getDefault();
+        return getThemeUri(context, def.getThemePackageName(), def.getThemeId());
     }
 
     public static Cursor listThemes(Context context) {
