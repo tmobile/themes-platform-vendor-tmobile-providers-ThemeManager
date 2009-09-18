@@ -176,6 +176,10 @@ public class PackageResources {
                     assetPath = ti.thumbnail;
                     break;
 
+            case ImageColumns.IMAGE_TYPE_PREVIEW:
+                    assetPath = ti.preview;
+                    break;
+
             default:
                     Log.e(ThemeManager.TAG, "Unknown image asset type: " + imageType);
                     assetPath = "UNKNOWN";
@@ -231,5 +235,6 @@ public class PackageResources {
         public static final int IMAGE_TYPE_FAVE = 1;
         public static final int IMAGE_TYPE_APP_FAVE = 2;
         public static final int IMAGE_TYPE_THUMBNAIL = 3;
+        public static final int IMAGE_TYPE_PREVIEW = 4;
     }
 }

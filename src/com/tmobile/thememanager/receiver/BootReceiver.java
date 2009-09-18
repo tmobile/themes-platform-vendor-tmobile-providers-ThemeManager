@@ -98,6 +98,14 @@ public class BootReceiver extends BroadcastReceiver {
                         PackageResources.insertImage(context, pi, ti, PackageResources.ImageColumns.IMAGE_TYPE_THUMBNAIL);
                     }
                 }
+                if (ti.preview != null) {
+                    Uri previewUri =
+                        PackageResources.getImageUri(context, pi.packageName, ti.preview);
+
+                    if (previewUri == null) {
+                        PackageResources.insertImage(context, pi, ti, PackageResources.ImageColumns.IMAGE_TYPE_PREVIEW);
+                    }
+                }
                 Themes.insertTheme(context, pi, ti, false,
                         themeEquals(pi, ti, appliedTheme));
             }

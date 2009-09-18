@@ -147,6 +147,9 @@ public class ThemePackageReceiver extends BroadcastReceiver {
                 if (ti.thumbnail != null) {
                     PackageResources.insertImage(context, pi, ti, PackageResources.ImageColumns.IMAGE_TYPE_THUMBNAIL);
                 }
+                if (ti.preview != null) {
+                    PackageResources.insertImage(context, pi, ti, PackageResources.ImageColumns.IMAGE_TYPE_PREVIEW);
+                }
                 Themes.insertTheme(context, pi, ti, true);
             }
         }

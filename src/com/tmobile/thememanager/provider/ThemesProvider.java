@@ -25,12 +25,12 @@ public class ThemesProvider extends ContentProvider {
 
     private static final int TYPE_THEMES = 0;
     private static final int TYPE_THEME = 1;
-    
+
     private SQLiteOpenHelper mOpenHelper;
 
     private static class OpenDatabaseHelper extends SQLiteOpenHelper {
         private static final String DATABASE_NAME = "theme_item.db";
-        private static final int DATABASE_VERSION = 6;
+        private static final int DATABASE_VERSION = 7;
 
         public OpenDatabaseHelper(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -67,7 +67,8 @@ public class ThemesProvider extends ContentProvider {
                     ThemeColumns.RINGTONE_URI + " TEXT, " +
                     ThemeColumns.NOTIFICATION_RINGTONE_NAME + " TEXT, " +
                     ThemeColumns.NOTIFICATION_RINGTONE_URI + " TEXT, " +
-                    ThemeColumns.THUMBNAIL_URI + " TEXT" +
+                    ThemeColumns.THUMBNAIL_URI + " TEXT, " +
+                    ThemeColumns.PREVIEW_URI + " TEXT" +
                     ")");
             db.execSQL("CREATE INDEX themeitem_map_package ON themeitem_map (theme_package)");
             db.execSQL("CREATE UNIQUE INDEX themeitem_map_key ON themeitem_map (theme_package, theme_id)");

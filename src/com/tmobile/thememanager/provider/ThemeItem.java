@@ -27,6 +27,7 @@ public class ThemeItem extends AbstractDAOItem {
     private int mColumnThumbnailUri;
     private int mColumnIsSystem;
     private int mColumnIsApplied;
+    private int mColumnPreviewUri;
 
     private static final AbstractDAOItem.Creator<ThemeItem> CREATOR =
             new AbstractDAOItem.Creator<ThemeItem>() {
@@ -61,6 +62,7 @@ public class ThemeItem extends AbstractDAOItem {
         mColumnThumbnailUri = c.getColumnIndex(ThemeColumns.THUMBNAIL_URI);
         mColumnIsSystem = c.getColumnIndex(ThemeColumns.IS_SYSTEM);
         mColumnIsApplied = c.getColumnIndex(ThemeColumns.IS_APPLIED);
+        mColumnPreviewUri = c.getColumnIndex(ThemeColumns.PREVIEW_URI);
     }
 
     @Override
@@ -135,6 +137,10 @@ public class ThemeItem extends AbstractDAOItem {
 
     public Uri getThumbnailUri() {
         return parseUriNullSafe(mCursor.getString(mColumnThumbnailUri));
+    }
+
+    public Uri getPreviewUri() {
+        return parseUriNullSafe(mCursor.getString(mColumnPreviewUri));
     }
 
     /** @deprecated */

@@ -93,6 +93,13 @@ public class Themes {
                 outValues.put(ThemeColumns.THUMBNAIL_URI, thumbnailUri.toString());
             }
         }
+        if (ti.preview != null) {
+            Uri previewUri = PackageResources.getImageUri(context,
+                    pi.packageName, ti.preview);
+            if (previewUri != null) {
+                outValues.put(ThemeColumns.PREVIEW_URI, previewUri.toString());
+            }
+        }
     }
 
     public static Uri insertTheme(Context context, PackageInfo pi, ThemeInfo ti,
@@ -202,6 +209,7 @@ public class Themes {
         public static final String NOTIFICATION_RINGTONE_URI = "notif_ringtone_uri";
 
         public static final String THUMBNAIL_URI = "thumbnail_uri";
+        public static final String PREVIEW_URI = "preview_uri";
 
         public static final String IS_SYSTEM = "system";
     }
