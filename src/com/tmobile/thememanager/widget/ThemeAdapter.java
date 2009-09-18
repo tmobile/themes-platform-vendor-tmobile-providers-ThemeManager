@@ -8,8 +8,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.CustomTheme;
 import android.database.Cursor;
+import android.net.Uri;
 
 public abstract class ThemeAdapter extends AbstractDAOItemAdapter<ThemeItem> {
+    private int mMarkedPosition;
+
     public ThemeAdapter(Activity context) {
         super(context, loadThemes(context), true);
     }
@@ -17,6 +20,30 @@ public abstract class ThemeAdapter extends AbstractDAOItemAdapter<ThemeItem> {
     private static Cursor loadThemes(Activity context) {
         return context.managedQuery(ThemeColumns.CONTENT_PLURAL_URI,
                 null, null, ThemeColumns.NAME);
+    }
+
+    /**
+     * Mark the applied theme's position.
+     *
+     * @param existingUri uri to select, or null to use the currently applied
+     *   item.
+     *
+     * @see {@link #getMarkedPosition}
+     */
+    public int markCurrentOrExistingTheme(Uri existingUri) {
+        int position = findExistingOrCurrentItem(getContext(), existingUri);
+        if (mMarkedPosition != position) {
+            mMarkedPosition = position;
+            notifyDataSetChanged();
+        }
+        return position;
+    }
+
+    /**
+     * @return the previously marked position.
+     */
+    public int getMarkedPosition() {
+        return mMarkedPosition;
     }
 
     @Override
@@ -48,8 +75,8 @@ public abstract class ThemeAdapter extends AbstractDAOItemAdapter<ThemeItem> {
     public int deleteItem(int pos) {
         if (pos != -1) {
             ThemeItem item = getDAOItem(pos);
-            Themes.deleteTheme(mContext, item.getPackageName(), item.getThemeId());
-            Cursor c = Themes.listThemesByPackage(mContext, item.getPackageName());
+            Themes.deleteTheme(getContext(), item.getPackageName(), item.getThemeId());
+            Cursor c = Themes.listThemesByPackage(getContext(), item.getPackageName());
             if (c != null) {
                 int count;
                 try {
@@ -59,7 +86,7 @@ public abstract class ThemeAdapter extends AbstractDAOItemAdapter<ThemeItem> {
                 }
                 if (count == 0) {
                     // un-install theme package
-                    mContext.getPackageManager().deletePackage(item.getPackageName(), null, 0);
+                    getContext().getPackageManager().deletePackage(item.getPackageName(), null, 0);
                 }
             }
 

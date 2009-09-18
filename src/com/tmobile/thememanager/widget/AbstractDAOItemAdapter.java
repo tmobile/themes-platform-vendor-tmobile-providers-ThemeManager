@@ -17,11 +17,17 @@ import com.tmobile.thememanager.provider.AbstractDAOItem;
 public abstract class AbstractDAOItemAdapter<T extends AbstractDAOItem> extends CursorAdapter {
     protected T mDAOItem;
     private final LayoutInflater mInflater;
+    private final Context mContext;
 
     public AbstractDAOItemAdapter(Activity context, Cursor c, boolean autoRequery) {
         super(context, c, autoRequery);
+        mContext = context;
         mInflater = LayoutInflater.from(context);
         allocInternal(c);
+    }
+
+    protected Context getContext() {
+        return mContext;
     }
 
     protected LayoutInflater getInflater() {
@@ -29,10 +35,10 @@ public abstract class AbstractDAOItemAdapter<T extends AbstractDAOItem> extends 
     }
 
     protected abstract void onAllocInternal(Cursor c);
-    
+
     private void allocInternal(Cursor c) {
         if (c != null && c.getCount() > 0) {
-            onAllocInternal(c); 
+            onAllocInternal(c);
         } else {
             mDAOItem = null;
         }
