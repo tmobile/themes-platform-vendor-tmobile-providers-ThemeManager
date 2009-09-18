@@ -57,8 +57,6 @@ public class ThemeChooser extends Activity {
     private Bitmap mPreviewCacheBitmap;
     private ImageView mPreviewCache;
     private PreviewContentStub mPreviewContentStub;
-    
-    ActivityManager mAM;
 
     @Override
     public void onCreate(Bundle icicle) {
@@ -82,8 +80,6 @@ public class ThemeChooser extends Activity {
         mPreviewCache = (ImageView)findViewById(R.id.preview_image);
         mApplyButton = (Button)findViewById(R.id.apply_btn);
         mApplyButton.setOnClickListener(mClickListener);
-
-        mAM = (ActivityManager)getSystemService(ACTIVITY_SERVICE);
 
         mAdapter = new ThumbnailAdapter(this);
         mFilmstrip.setAdapter(mAdapter);
@@ -200,7 +196,6 @@ public class ThemeChooser extends Activity {
                         public void onClick(DialogInterface dialog, int whichButton) {
                             mAdapter = new ThumbnailAdapter(ThemeChooser.this);
                             int defaultThemeIndex = mAdapter.findItem(CustomTheme.getDefault());
-                            mAM = (ActivityManager)getSystemService(ACTIVITY_SERVICE);
                             ThemeUtilities.applyTheme(ThemeChooser.this,
                                     mAdapter.getTheme(defaultThemeIndex));
                             finish();
@@ -353,37 +348,6 @@ public class ThemeChooser extends Activity {
              * memory it might be using. */
             mPreviewContentStub.removeAllViews();
         }
-    }
-
-    private static ThemeInfo getParentThemeInfo(Context context, String packageName, String parentThemeId) {
-        if (packageName != null && packageName.length() > 0) {
-            try {
-                PackageInfo parentPI = context.getPackageManager().getPackageInfo(packageName, 0);
-                ThemeInfo [] infos = parentPI.themeInfos;
-                if (infos != null && infos.length > 0) {
-                    for (ThemeInfo info : infos) {
-                        if (info.themeId.equals(parentThemeId)) {
-                            return info;
-                        }
-                    }
-                }
-                throw new PackageManager.NameNotFoundException("Theme <" + parentThemeId + "> not found");
-            } catch (Exception e) {
-                Log.e(ThemeManager.TAG, "parent package is not found", e);
-            }
-        }
-        return null;
-    }
-
-    /* package */ static Uri getParentThemeWallpaperUri(Context context, String packageName, String parentThemeId) {
-        ThemeInfo info = getParentThemeInfo(context, packageName, parentThemeId);
-        if (info != null && info.wallpaperImageName != null) {
-            return PackageResources.getImageUri(
-                context,
-                packageName,
-                info.wallpaperImageName);
-        }
-        return null;
     }
 
     private final OnInflateListener mInflateListener = new OnInflateListener() {
