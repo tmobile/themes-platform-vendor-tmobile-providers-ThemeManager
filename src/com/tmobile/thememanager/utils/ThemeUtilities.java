@@ -3,6 +3,7 @@ package com.tmobile.thememanager.utils;
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.ThemeItem;
 import com.tmobile.thememanager.provider.Themes;
+import com.tmobile.thememanager.provider.Themes.ThemeColumns;
 
 import android.app.ActivityManager;
 import android.content.Context;
@@ -21,27 +22,31 @@ public class ThemeUtilities {
      * ringtones are set.
      */
     public static void applyStyle(Context context, ThemeItem theme) {
+        applyStyleInternal(context, theme);
+
+        /* Broadcast appearance/style change. */
+        context.sendBroadcast(new Intent(ThemeManager.ACTION_THEME_CHANGED)
+                .setDataAndType(theme.getUri(context), ThemeColumns.STYLE_CONTENT_ITEM_TYPE));
+    }
+
+    public static void applyStyleInternal(Context context, ThemeItem theme) {
         // New theme is applied, hence reset the count to 0.
         Intent intent = new Intent(Intent.ACTION_APP_LAUNCH_FAILURE_RESET,
                 Uri.fromParts("package", "com.tmobile.thememanager.activity", null));
         context.sendBroadcast(intent);
-        
+
         Themes.markAppliedTheme(context, theme.getPackageName(), theme.getThemeId());
 
         /* Trigger a configuration change so that all apps will update their UI.  This will also
          * persist the theme for us across reboots. */
         updateConfiguration(context, theme);
-
-        /* Broadcast theme change. */
-        context.sendBroadcast(new Intent(ThemeManager.ACTION_THEME_CHANGED,
-                theme.getUri(context)));
     }
 
     /**
      * Applies a full theme.  This is a superset of applyStyle.
      */
     public static void applyTheme(Context context, ThemeItem theme) {
-        applyTheme(context, theme, null, null, null);
+        applyTheme(context, theme, ThemeColumns.CONTENT_ITEM_TYPE, null, null, null);
     }
 
     /**
@@ -49,7 +54,7 @@ public class ThemeUtilities {
      * caller to override certain components of a theme with user-supplied
      * values.
      */
-    public static void applyTheme(Context context, ThemeItem theme,
+    public static void applyTheme(Context context, ThemeItem theme, String themeType,
             Uri wallpaperUri, Uri ringtoneUri, Uri notificationRingtoneUri) {
         if (ThemeManager.DEBUG) {
             Log.i(ThemeManager.TAG, "applyTheme: theme=" + theme.getUri(context) +
@@ -80,6 +85,10 @@ public class ThemeUtilities {
         }
 
         applyStyle(context, theme);
+
+        /* Broadcast theme change. */
+        context.sendBroadcast(new Intent(ThemeManager.ACTION_THEME_CHANGED)
+                .setDataAndType(theme.getUri(context), themeType));
     }
 
     private static void updateConfiguration(Context context, ThemeItem theme) {

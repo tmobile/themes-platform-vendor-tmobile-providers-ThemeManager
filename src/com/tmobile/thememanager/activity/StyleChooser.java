@@ -3,6 +3,7 @@ package com.tmobile.thememanager.activity;
 import com.tmobile.thememanager.R;
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.ThemeItem;
+import com.tmobile.thememanager.provider.Themes.ThemeColumns;
 import com.tmobile.thememanager.utils.ThemeUtilities;
 import com.tmobile.thememanager.widget.AbstractDAOItemAdapter;
 import com.tmobile.thememanager.widget.ThemeAdapter;
@@ -43,7 +44,8 @@ public class StyleChooser extends Activity implements OnItemClickListener {
 
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         ThemeItem item = mAdapter.getTheme(position);
-        setResult(RESULT_OK, new Intent().setData(item.getUri(this)));
+        setResult(RESULT_OK, new Intent().setDataAndType(item.getUri(this),
+                ThemeColumns.STYLE_CONTENT_ITEM_TYPE));
         finish();
         ThemeUtilities.applyStyle(this, item);
     }
