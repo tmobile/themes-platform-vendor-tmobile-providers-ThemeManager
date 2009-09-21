@@ -65,7 +65,7 @@ public class StyleChooser extends Activity implements OnItemClickListener {
 
         @Override
         public View newView(Context context, Cursor cursor, ViewGroup parent) {
-            return getInflater().inflate(android.R.layout.select_dialog_singlechoice,
+            return getInflater().inflate(android.R.layout.simple_list_item_checked,
                     parent, false);
         }
     }
