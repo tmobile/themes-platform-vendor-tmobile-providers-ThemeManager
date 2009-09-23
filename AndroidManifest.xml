@@ -90,16 +90,6 @@
         </activity>
  -->
 
-        <activity
-            android:name=".activity.ThemeWallpaperChooser"
-            android:label="@string/choose_wallpaper" >
-            <intent-filter>
-                <action android:name="android.intent.action.SET_WALLPAPER" />
-                <action android:name="com.tmobile.intent.action.PICK_WALLPAPER" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-
         <provider android:name=".provider.PackageResourcesProvider"
             android:authorities="com.tmobile.thememanager.packageresources" />
 
