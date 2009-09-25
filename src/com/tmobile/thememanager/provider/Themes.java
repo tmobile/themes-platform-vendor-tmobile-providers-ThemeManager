@@ -34,8 +34,12 @@ public class Themes {
     }
 
     public static Cursor listThemes(Context context) {
+        return listThemes(context, null);
+    }
+
+    public static Cursor listThemes(Context context, String[] projection) {
         return context.getContentResolver().query(ThemeColumns.CONTENT_PLURAL_URI,
-                null, null, null, null);
+                projection, null, null, null);
     }
 
     public static Cursor listThemesByPackage(Context context, String packageName) {
