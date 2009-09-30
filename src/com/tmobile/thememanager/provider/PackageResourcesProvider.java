@@ -3,6 +3,7 @@ package com.tmobile.thememanager.provider;
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.PackageResources.ImageColumns;
 import com.tmobile.thememanager.provider.PackageResources.RingtoneColumns;
+import com.tmobile.thememanager.provider.Themes.ThemeColumns;
 import com.tmobile.thememanager.utils.DatabaseUtilities;
 
 import android.app.ActivityManager;
@@ -301,17 +302,25 @@ public class PackageResourcesProvider extends ContentProvider
         Uri newUri = null;
         long _id;
 
+        if (!values.containsKey(RingtoneColumns.PACKAGE)) {
+            throw new IllegalArgumentException("Required argument missing: " +
+                    RingtoneColumns.PACKAGE);
+        }
+        String packageName = values.getAsString(RingtoneColumns.PACKAGE);
+
         switch (URI_MATCHER.match(uri)) {
             case TYPE_RINGTONES:
                 _id = db.insert("ringtone_map", RingtoneColumns._ID, values);
                 if (_id >= 0) {
-                    newUri = ContentUris.withAppendedId(RingtoneColumns.CONTENT_URI, _id);
+                    newUri = PackageResources.makeUri(RingtoneColumns.CONTENT_URI,
+                            packageName, _id);
                 }
                 break;
             case TYPE_IMAGES:
                 _id = db.insert("image_map", ImageColumns._ID, values);
                 if (_id >= 0) {
-                    newUri = ContentUris.withAppendedId(ImageColumns.CONTENT_URI, _id);
+                    newUri = PackageResources.makeUri(ImageColumns.CONTENT_URI,
+                            packageName, _id);
                 }
                 break;
             default:

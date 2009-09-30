@@ -9,6 +9,7 @@ import android.content.pm.BaseThemeInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.tmobile.thememanager.ThemeManager;
@@ -21,7 +22,10 @@ public class PackageResources {
 
     private PackageResources() {}
 
-    private static Uri makeUri(Uri baseUri, String packageName, long id) {
+    /* package */ static Uri makeUri(Uri baseUri, String packageName, long id) {
+        if (TextUtils.isEmpty(packageName)) {
+            throw new IllegalArgumentException("packageName must not be null or empty.");
+        }
         return baseUri.buildUpon()
             .appendPath(packageName)
             .appendPath(String.valueOf(id))
