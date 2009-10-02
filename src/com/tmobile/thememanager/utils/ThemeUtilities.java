@@ -74,14 +74,16 @@ public class ThemeUtilities {
             ringtoneUri = theme.getRingtoneUri(context);
         }
         if (ringtoneUri != null) {
-            setDefaultRingtone(context, ringtoneUri);
+            RingtoneManager.setActualDefaultRingtoneUri(context, RingtoneManager.TYPE_RINGTONE,
+                    ringtoneUri);
         }
 
         if (notificationRingtoneUri == null) {
             notificationRingtoneUri = theme.getNotificationRingtoneUri(context);
         }
         if (notificationRingtoneUri != null) {
-            setDefaultNotificationRingtone(context, notificationRingtoneUri);
+            RingtoneManager.setActualDefaultRingtoneUri(context, RingtoneManager.TYPE_NOTIFICATION,
+                    ringtoneUri);
         }
 
         applyStyle(context, theme);
@@ -109,28 +111,6 @@ public class ThemeUtilities {
             }
         } catch (Exception e) {
             Log.e(ThemeManager.TAG, "Could not set wallpaper", e);
-        }
-    }
-
-    private static void setDefaultRingtone(Context context, Uri ringtoneUri) {
-        if (ThemeManager.DEBUG) {
-            Log.i(ThemeManager.TAG, "ringtoneUri=" + ringtoneUri);
-        }
-
-        if (ringtoneUri != null) {
-            RingtoneManager.setActualDefaultRingtoneUri(context, RingtoneManager.TYPE_RINGTONE,
-                    ringtoneUri);
-        }
-    }
-
-    private static void setDefaultNotificationRingtone(Context context, Uri ringtoneUri) {
-        if (ThemeManager.DEBUG) {
-            Log.i(ThemeManager.TAG, "ringtoneUri=" + ringtoneUri);
-        }
-
-        if (ringtoneUri != null) {
-            RingtoneManager.setActualDefaultRingtoneUri(context, RingtoneManager.TYPE_NOTIFICATION,
-                    ringtoneUri);
         }
     }
 }
