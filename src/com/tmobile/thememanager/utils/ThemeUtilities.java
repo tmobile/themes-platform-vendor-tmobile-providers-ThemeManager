@@ -29,7 +29,7 @@ public class ThemeUtilities {
                 .setDataAndType(theme.getUri(context), ThemeColumns.STYLE_CONTENT_ITEM_TYPE));
     }
 
-    public static void applyStyleInternal(Context context, ThemeItem theme) {
+    private static void applyStyleInternal(Context context, ThemeItem theme) {
         // New theme is applied, hence reset the count to 0.
         Intent intent = new Intent(Intent.ACTION_APP_LAUNCH_FAILURE_RESET,
                 Uri.fromParts("package", "com.tmobile.thememanager.activity", null));
@@ -86,7 +86,7 @@ public class ThemeUtilities {
                     ringtoneUri);
         }
 
-        applyStyle(context, theme);
+        applyStyleInternal(context, theme);
 
         /* Broadcast theme change. */
         context.sendBroadcast(new Intent(ThemeManager.ACTION_THEME_CHANGED)
