@@ -41,27 +41,6 @@
         android:icon="@drawable/personalize"
         pluto:isThemeable="true">
 
-<!--
-        <activity
-            android:name=".activity.ThemeChooser"
-            android:label="@string/theme_chooser_title"
-            android:theme="@style/NoBackgroundAndNoTitle">
-
-            <intent-filter android:label="@string/theme_intent_title">
-                <action android:name="com.tmobile.intent.action.SET_THEME" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="vnd.tmobile.cursor.dir/theme" />
-            </intent-filter>
-
-            <intent-filter android:label="@string/theme_intent_title">
-                <action android:name="android.intent.action.PICK" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="vnd.tmobile.cursor.dir/theme" />
-            </intent-filter>
-
-        </activity>
- -->
-
         <activity
             android:name=".activity.StyleChooser"
             android:label="@string/style_chooser_title">
@@ -79,16 +58,6 @@
             </intent-filter>
 
         </activity>
-
-<!--
-        <activity android:name=".activity.Personalize" android:label="@string/app_name">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
- -->
 
         <provider android:name=".provider.PackageResourcesProvider"
             android:authorities="com.tmobile.thememanager.packageresources" />
@@ -120,12 +89,6 @@
                 <action android:name="android.intent.action.PACKAGE_REMOVED" />
                 <category android:name="com.tmobile.intent.category.THEME_PACKAGE_INSTALL_STATE_CHANGE" />
                 <data android:scheme="package" />
-            </intent-filter>
-        </receiver>
-
-        <receiver android:name=".receiver.WallpaperChanged">
-            <intent-filter>
-                <action android:name="android.intent.action.WALLPAPER_CHANGED" />
             </intent-filter>
         </receiver>
 
