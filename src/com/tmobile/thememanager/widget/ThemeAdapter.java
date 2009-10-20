@@ -71,28 +71,4 @@ public abstract class ThemeAdapter extends AbstractDAOItemAdapter<ThemeItem> {
         }
         return -1;
     }
-
-    public int deleteItem(int pos) {
-        if (pos != -1) {
-            ThemeItem item = getDAOItem(pos);
-            Themes.deleteTheme(getContext(), item.getPackageName(), item.getThemeId());
-            Cursor c = Themes.listThemesByPackage(getContext(), item.getPackageName());
-            if (c != null) {
-                int count;
-                try {
-                    count = c.getCount();
-                } finally {
-                    c.close();
-                }
-                if (count == 0) {
-                    // un-install theme package
-                    getContext().getPackageManager().deletePackage(item.getPackageName(), null, 0);
-                }
-            }
-
-            notifyDataSetChanged();
-        }
-
-        return findItem(CustomTheme.getDefault());
-    }
 }
