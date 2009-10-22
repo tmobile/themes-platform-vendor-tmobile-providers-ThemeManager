@@ -3,12 +3,10 @@ package com.tmobile.thememanager.provider;
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.PackageResources.ImageColumns;
 import com.tmobile.thememanager.provider.PackageResources.RingtoneColumns;
-import com.tmobile.thememanager.provider.Themes.ThemeColumns;
 import com.tmobile.thememanager.utils.DatabaseUtilities;
 
 import android.app.ActivityManager;
 import android.content.ContentProvider;
-import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.IExtendedContentProvider;
@@ -33,7 +31,6 @@ import android.view.WindowManager;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 

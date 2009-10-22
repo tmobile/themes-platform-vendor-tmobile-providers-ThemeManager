@@ -5,7 +5,6 @@ import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.ThemeItem;
 import com.tmobile.thememanager.provider.Themes.ThemeColumns;
 import com.tmobile.thememanager.utils.ThemeUtilities;
-import com.tmobile.thememanager.widget.AbstractDAOItemAdapter;
 import com.tmobile.thememanager.widget.ThemeAdapter;
 
 import android.app.Activity;

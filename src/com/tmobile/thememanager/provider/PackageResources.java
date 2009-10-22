@@ -1,6 +1,5 @@
 package com.tmobile.thememanager.provider;
 
-import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.PackageInfo;

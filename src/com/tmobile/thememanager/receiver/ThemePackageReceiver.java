@@ -4,7 +4,6 @@ import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.PackageResources;
 import com.tmobile.thememanager.provider.PackageResourcesProvider;
 import com.tmobile.thememanager.provider.Themes;
-import com.tmobile.thememanager.utils.ThemeBitmapStore;
 
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
@@ -18,8 +17,8 @@ import android.content.res.Configuration;
 import android.content.res.CustomTheme;
 import android.util.Log;
 
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ThemePackageReceiver extends BroadcastReceiver {
     private final static int TIMEOUT = 5000; // timeout in milliseconds
@@ -88,8 +87,6 @@ public class ThemePackageReceiver extends BroadcastReceiver {
 
         PackageResources.deleteRingtones(context, packageName);
         PackageResources.deleteImages(context, packageName);
-
-        ThemeBitmapStore.deletePackage(context, packageName);
 
         boolean updateConfiguration = false;
 
