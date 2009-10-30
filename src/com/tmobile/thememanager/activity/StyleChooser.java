@@ -1,5 +1,9 @@
 package com.tmobile.thememanager.activity;
 
+import com.htc.app.HtcListActivity;
+import com.htc.widget.HtcAdapterView;
+import com.htc.widget.HtcListView;
+import com.htc.widget.HtcAdapterView.OnItemClickListener;
 import com.tmobile.thememanager.R;
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.ThemeItem;
@@ -15,12 +19,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.AdapterView.OnItemClickListener;
 
-public class StyleChooser extends Activity implements OnItemClickListener {
+
+public class StyleChooser extends HtcListActivity implements OnItemClickListener {
     private StyleAdapter mAdapter;
 
     @Override
@@ -28,7 +31,7 @@ public class StyleChooser extends Activity implements OnItemClickListener {
         super.onCreate(icicle);
         setContentView(R.layout.style_chooser);
 
-        ListView list = (ListView)findViewById(android.R.id.list);
+        HtcListView list = (HtcListView)findViewById(android.R.id.list);
         mAdapter = new StyleAdapter(this);
         list.setAdapter(mAdapter);
         list.setOnItemClickListener(this);
@@ -41,7 +44,7 @@ public class StyleChooser extends Activity implements OnItemClickListener {
         }
     }
 
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+    public void onItemClick(HtcAdapterView<?> parent, View view, int position, long id) {
         ThemeItem item = mAdapter.getTheme(position);
         setResult(RESULT_OK, new Intent().setDataAndType(item.getUri(this),
                 ThemeColumns.STYLE_CONTENT_ITEM_TYPE));

@@ -39,7 +39,10 @@
     <application
         android:label="@string/app_name"
         android:icon="@drawable/personalize"
+        android:theme="@style/NoBackgroundAndNoTitle"
         pluto:isThemeable="true">
+
+        <uses-library android:name="com.htc.framework" />
 
         <activity
             android:name=".activity.StyleChooser"
