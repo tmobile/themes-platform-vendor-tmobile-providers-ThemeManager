@@ -12,6 +12,7 @@ import android.net.Uri;
  * Themes class APIs.  Can be used efficiently with a custom CursorAdapter.
  */
 public class ThemeItem extends AbstractDAOItem {
+    private int mColumnId;
     private int mColumnThemeId;
     private int mColumnThemePackage;
     private int mColumnName;
@@ -47,6 +48,7 @@ public class ThemeItem extends AbstractDAOItem {
 
     public ThemeItem(Cursor c) {
         super(c);
+        mColumnId = c.getColumnIndex(ThemeColumns._ID);
         mColumnThemeId = c.getColumnIndex(ThemeColumns.THEME_ID);
         mColumnThemePackage = c.getColumnIndex(ThemeColumns.THEME_PACKAGE);
         mColumnName = c.getColumnIndex(ThemeColumns.NAME);
@@ -63,6 +65,10 @@ public class ThemeItem extends AbstractDAOItem {
         mColumnIsSystem = c.getColumnIndex(ThemeColumns.IS_SYSTEM);
         mColumnIsApplied = c.getColumnIndex(ThemeColumns.IS_APPLIED);
         mColumnPreviewUri = c.getColumnIndex(ThemeColumns.PREVIEW_URI);
+    }
+
+    public long getId() {
+        return mCursor.getLong(mColumnId);
     }
 
     @Override

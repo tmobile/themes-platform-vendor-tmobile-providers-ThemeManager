@@ -8,6 +8,8 @@ import com.tmobile.thememanager.provider.Themes.ThemeColumns;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.ThemeInfo;
 import android.content.res.Configuration;
 import android.content.res.CustomTheme;
 import android.media.RingtoneManager;
@@ -93,11 +95,23 @@ public class ThemeUtilities {
                 .setDataAndType(theme.getUri(context), themeType));
     }
 
-    private static void updateConfiguration(Context context, ThemeItem theme) {
+    public static void updateConfiguration(Context context, CustomTheme theme) {
+        updateConfiguration(context, theme.getThemePackageName(), theme.getThemeId());
+    }
+
+    public static void updateConfiguration(Context context, ThemeItem theme) {
+        updateConfiguration(context, theme.getPackageName(), theme.getThemeId());
+    }
+
+    public static void updateConfiguration(Context context, PackageInfo pi, ThemeInfo ti) {
+        updateConfiguration(context, pi.packageName, ti.themeId);
+    }
+
+    private static void updateConfiguration(Context context, String packageName, String themeId) {
         ActivityManager am = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
         Configuration currentConfig = am.getConfiguration();
 
-        currentConfig.customTheme = new CustomTheme(theme.getThemeId(), theme.getPackageName());
+        currentConfig.customTheme = new CustomTheme(themeId, packageName);
         am.updateConfiguration(currentConfig);
     }
 
@@ -112,5 +126,29 @@ public class ThemeUtilities {
         } catch (Exception e) {
             Log.e(ThemeManager.TAG, "Could not set wallpaper", e);
         }
+    }
+
+    public static CustomTheme getAppliedTheme(Context context) {
+        ActivityManager am = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
+        Configuration config = am.getConfiguration();
+        return (config.customTheme != null ? config.customTheme : CustomTheme.getDefault());
+    }
+
+    public static int compareTheme(ThemeItem item, PackageInfo pi, ThemeInfo ti) {
+        int cmp = item.getPackageName().compareTo(pi.packageName);
+        if (cmp != 0) {
+            return cmp;
+        }
+        return item.getThemeId().compareTo(ti.themeId);
+    }
+
+    public static boolean themeEquals(PackageInfo pi, ThemeInfo ti, CustomTheme current) {
+        if (!pi.packageName.equals(current.getThemePackageName())) {
+            return false;
+        }
+        if (!ti.themeId.equals(current.getThemeId())) {
+            return false;
+        }
+        return true;
     }
 }

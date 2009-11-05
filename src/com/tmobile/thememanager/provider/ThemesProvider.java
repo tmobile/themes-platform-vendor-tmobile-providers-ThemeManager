@@ -1,22 +1,38 @@
 package com.tmobile.thememanager.provider;
 
+import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.Themes.ThemeColumns;
 import com.tmobile.thememanager.utils.DatabaseUtilities;
+import com.tmobile.thememanager.utils.FileUtilities;
+import com.tmobile.thememanager.utils.ThemeUtilities;
 
+import android.content.BroadcastReceiver;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.UriMatcher;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.ThemeInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.CustomTheme;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Process;
+import android.util.Log;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
- * Provider 
+ * Provider
  */
 public class ThemesProvider extends ContentProvider {
     private static final UriMatcher URI_MATCHER = new UriMatcher(UriMatcher.NO_MATCH);
@@ -82,8 +98,367 @@ public class ThemesProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         mOpenHelper = new OpenDatabaseHelper(getContext());
+
+        /*
+         * Detect theme package changes while the provider (that is, our
+         * process) is alive. This is the more likely catch for theme package
+         * changes as the user is somehow interacting with the theme manager
+         * application when these events occur.
+         */
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_PACKAGE_ADDED);
+        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        filter.addCategory(Intent.CATEGORY_THEME_PACKAGE_INSTALLED_STATE_CHANGE);
+        filter.addDataScheme("package");
+        getContext().registerReceiver(mThemePackageReceiver, filter);
+
+        /**
+         * Start a background task to make sure the database is in sync with the
+         * package manager. This will also detect inserted or deleted themes
+         * which didn't come through our application, and that occurred while
+         * this provider was not alive.
+         * <p>
+         * This is not the common case for users, but it is possible and must be
+         * supported. Development invokes this feature often when restarting the
+         * emulator with changes to theme packages, or by using "adb sync".
+         */
+        new VerifyInstalledThemesThread().start();
+
         return true;
     }
+
+    private class VerifyInstalledThemesThread extends Thread {
+        private final SQLiteDatabase mDb;
+
+        public VerifyInstalledThemesThread() {
+            mDb = mOpenHelper.getWritableDatabase();
+        }
+
+        public void run() {
+            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+
+            long start;
+
+            if (ThemeManager.DEBUG) {
+                start = System.currentTimeMillis();
+            }
+
+            SQLiteDatabase db = mDb;
+            db.beginTransaction();
+            try {
+                verifyPackages();
+                db.setTransactionSuccessful();
+            } finally {
+                db.endTransaction();
+
+                if (ThemeManager.DEBUG) {
+                    Log.i(ThemeManager.TAG, "VerifyInstalledThemesThread took " +
+                            (System.currentTimeMillis() - start) + " ms.");
+                }
+            }
+        }
+
+        private void verifyPackages() {
+            /* List all currently installed theme packages. */
+            List<PackageInfo> themePackages = getContext().getPackageManager()
+                    .getInstalledThemePackages();
+
+            CustomTheme appliedTheme = ThemeUtilities.getAppliedTheme(getContext());
+
+            /*
+             * Get a sorted cursor of all currently known themes. We'll walk
+             * this cursor along with the package managers sorted output to
+             * determine changes.
+             */
+            Cursor current = mDb.query(TABLE_NAME,
+                    null, null, null, null, null,
+                    ThemeColumns.THEME_PACKAGE + ", " + ThemeColumns.THEME_ID);
+            ThemeItem currentItem = ThemeItem.getInstance(current);
+
+            Collections.sort(themePackages, new Comparator<PackageInfo>() {
+                public int compare(PackageInfo a, PackageInfo b) {
+                    return a.packageName.compareTo(b.packageName);
+                }
+            });
+
+            boolean notifyChanges = false;
+
+            try {
+                for (PackageInfo pi: themePackages) {
+                    if (pi.themeInfos == null) {
+                        continue;
+                    }
+
+                    /*
+                     * Deal with potential package change, moving `current'
+                     * along to efficiently detect differences.
+                     */
+                    boolean invalidated = detectPackageChange(mDb, pi, current, currentItem,
+                            appliedTheme);
+                    if (invalidated) {
+                        notifyChanges = true;
+                    }
+
+                    mDb.yieldIfContendedSafely();
+                }
+            } finally {
+                if (currentItem != null) {
+                    currentItem.close();
+                }
+                if (notifyChanges) {
+                    notifyChanges();
+                }
+            }
+        }
+    }
+
+    private static boolean detectPackageChange(SQLiteDatabase db, PackageInfo pi, Cursor current,
+            ThemeItem currentItem, CustomTheme appliedTheme) {
+        boolean notifyChanges = false;
+
+        Arrays.sort(pi.themeInfos, new Comparator<ThemeInfo>() {
+            public int compare(ThemeInfo a, ThemeInfo b) {
+                return a.themeId.compareTo(b.themeId);
+            }
+        });
+
+        for (ThemeInfo ti: pi.themeInfos) {
+            String currPackageName = null;
+            String currThemeId = null;
+
+            /*
+             * The local cursor is sorted to require only 1 iteration
+             * through to detect inserts, updates, and deletes.
+             */
+            while (!current.isAfterLast()) {
+                String packageName = currentItem.getPackageName();
+                String themeId = currentItem.getThemeId();
+
+                /* currentItem less than, equal to, or greater than pi/ti? */
+                int cmp = ThemeUtilities.compareTheme(currentItem, pi, ti);
+
+                if (cmp < 0) {
+                    /*
+                     * This theme isn't in the package list, delete and
+                     * go to the next; rinse, lather, repeat.
+                     */
+                    deleteTheme(db, currentItem);
+                    notifyChanges = true;
+                    current.moveToNext();
+                    continue;
+                }
+
+                /*
+                 * Either we need to verify this entry in the database or we
+                 * need to insert a new one. Either way, the current cursor
+                 * is correctly positioned so we should break out of this
+                 * loop to do the real work.
+                 */
+                if (cmp == 0) {
+                    currPackageName = packageName;
+                    currThemeId = themeId;
+                } else /* if (cmp > 0) */ {
+                    currPackageName = null;
+                    currThemeId = null;
+                }
+
+                /* Handle either an insert or verify/update. */
+                break;
+            }
+
+            boolean isCurrentTheme = ThemeUtilities.themeEquals(pi, ti, appliedTheme);
+
+            if (currPackageName != null && currThemeId != null) {
+                boolean invalidated = verifyOrUpdateTheme(db, pi, ti, currentItem, isCurrentTheme);
+                if (invalidated) {
+                    notifyChanges = true;
+                }
+                current.moveToNext();
+            } else {
+                insertTheme(db, pi, ti, isCurrentTheme);
+                notifyChanges = true;
+            }
+        }
+
+        return notifyChanges;
+    }
+
+    private static void populateContentValues(ContentValues outValues, PackageInfo pi,
+            ThemeInfo ti, boolean isCurrentTheme) {
+        outValues.put(ThemeColumns.IS_APPLIED, isCurrentTheme ? 1 : 0);
+        outValues.put(ThemeColumns.THEME_ID, ti.themeId);
+        outValues.put(ThemeColumns.THEME_PACKAGE, pi.packageName);
+        outValues.put(ThemeColumns.NAME, ti.name);
+        outValues.put(ThemeColumns.STYLE_NAME,
+                ti.themeStyleName != null ? ti.themeStyleName : ti.name);
+        outValues.put(ThemeColumns.AUTHOR, ti.author);
+        outValues.put(ThemeColumns.IS_DRM, ti.isDrmProtected ? 1 : 0);
+        outValues.put(ThemeColumns.IS_SYSTEM,
+                ((pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) ? 1 : 0);
+        if (ti.wallpaperImageName != null) {
+            outValues.put(ThemeColumns.WALLPAPER_NAME,
+                    FileUtilities.basename(ti.wallpaperImageName));
+            outValues.put(ThemeColumns.WALLPAPER_URI,
+                    PackageResources.makeAssetPathUri(pi.packageName, ti.wallpaperImageName)
+                        .toString());
+        }
+        if (ti.ringtoneFileName != null) {
+            outValues.put(ThemeColumns.RINGTONE_NAME, ti.ringtoneName);
+            outValues.put(ThemeColumns.RINGTONE_URI,
+                    PackageResources.makeAssetPathUri(pi.packageName, ti.ringtoneFileName)
+                        .toString());
+        }
+        if (ti.notificationRingtoneFileName != null) {
+            outValues.put(ThemeColumns.NOTIFICATION_RINGTONE_NAME, ti.notificationRingtoneName);
+            outValues.put(ThemeColumns.NOTIFICATION_RINGTONE_URI,
+                    PackageResources.makeAssetPathUri(pi.packageName,
+                            ti.notificationRingtoneFileName).toString());
+        }
+        if (ti.thumbnail != null) {
+            outValues.put(ThemeColumns.THUMBNAIL_URI,
+                    PackageResources.makeAssetPathUri(pi.packageName, ti.thumbnail)
+                        .toString());
+        }
+        if (ti.preview != null) {
+            outValues.put(ThemeColumns.PREVIEW_URI,
+                    PackageResources.makeAssetPathUri(pi.packageName, ti.preview)
+                        .toString());
+        }
+    }
+
+    private static void deleteTheme(SQLiteDatabase db, ThemeItem item) {
+        if (ThemeManager.DEBUG) {
+            Log.i(ThemeManager.TAG, "ThemesProvider out of sync: removing " +
+                    item.getPackageName() + "/" + item.getThemeId());
+        }
+        db.delete(TABLE_NAME,
+                ThemeColumns._ID + " = " + item.getId(), null);
+    }
+
+    private static void insertTheme(SQLiteDatabase db, PackageInfo pi, ThemeInfo ti,
+            boolean isCurrentTheme) {
+        if (ThemeManager.DEBUG) {
+            Log.i(ThemeManager.TAG, "ThemesProvider out of sync: inserting " +
+                    pi.packageName + "/" + ti.themeId);
+        }
+
+        ContentValues values = new ContentValues();
+        populateContentValues(values, pi, ti, isCurrentTheme);
+        db.insert(TABLE_NAME, ThemeColumns._ID, values);
+    }
+
+    private static boolean verifyOrUpdateTheme(SQLiteDatabase db, PackageInfo pi, ThemeInfo ti,
+            ThemeItem existing, boolean isCurrentTheme) {
+        boolean invalidated = false;
+
+        /*
+         * Pretend we would insert this record fresh, then compare the
+         * resulting ContentValues with the actual database row. If any
+         * differences are found, adjust them with an update query.
+         */
+        ContentValues values = new ContentValues();
+        populateContentValues(values, pi, ti, isCurrentTheme);
+
+        invalidated = !equalContentValuesAndCursor(values, existing.getCursor());
+
+        if (invalidated) {
+            if (ThemeManager.DEBUG) {
+                Log.i(ThemeManager.TAG, "ThemesProvider out of sync: updating " +
+                        existing.getPackageName() + "/" + existing.getThemeId());
+            }
+
+            db.update(TABLE_NAME, values,
+                    ThemeColumns._ID + " = " + existing.getId(), null);
+        }
+
+        return invalidated;
+    }
+
+    private static boolean equalContentValuesAndCursor(ContentValues values, Cursor cursor) {
+        int n = cursor.getColumnCount();
+        while (n-- > 0) {
+            String columnName = cursor.getColumnName(n);
+            if (columnName.equals("_id")) {
+                continue;
+            }
+            if (cursor.isNull(n)) {
+                if (values.getAsString(columnName) != null) {
+                    return false;
+                }
+            } else if (!cursor.getString(n).equals(values.getAsString(columnName))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private final BroadcastReceiver mThemePackageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(final Context context, final Intent intent) {
+            new Thread() {
+                public void run() {
+                    SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+                    db.beginTransaction();
+                    try {
+                        handlePackageEvent(context, db, intent);
+                        db.setTransactionSuccessful();
+                    } finally {
+                        db.endTransaction();
+                    }
+                }
+            }.start();
+        }
+
+        private void handlePackageEvent(Context context, SQLiteDatabase db, Intent intent) {
+            String action = intent.getAction();
+            String pkg = intent.getData().getSchemeSpecificPart();
+
+            boolean isReplacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false);
+
+            try {
+                if (isReplacing) {
+                    if (action.equals(Intent.ACTION_PACKAGE_ADDED)) {
+                        if (ThemeManager.DEBUG) {
+                            Log.i(ThemeManager.TAG, "Handling replaced theme package: " + pkg);
+                        }
+                        PackageInfo pi = context.getPackageManager().getPackageInfo(pkg, 0);
+                        Cursor cursor = db.query(TABLE_NAME, null,
+                                ThemeColumns.THEME_PACKAGE + " = ?",
+                                new String[] { pkg }, null, null, ThemeColumns.THEME_ID);
+                        ThemeItem dao = ThemeItem.getInstance(cursor);
+                        boolean invalidated =
+                            detectPackageChange(db, pi, cursor, dao,
+                                    ThemeUtilities.getAppliedTheme(context));
+                        if (invalidated) {
+                            notifyChanges();
+                        }
+                    }
+                } else if (action.equals(Intent.ACTION_PACKAGE_ADDED)) {
+                    if (ThemeManager.DEBUG) {
+                        Log.i(ThemeManager.TAG, "Handling new theme package: " + pkg);
+                    }
+                    PackageInfo pi = context.getPackageManager().getPackageInfo(pkg, 0);
+                    if (pi != null && pi.themeInfos != null) {
+                        for (ThemeInfo ti: pi.themeInfos) {
+                            insertTheme(db, pi, ti, false);
+                        }
+                    }
+                    notifyChanges();
+                } else if (action.equals(Intent.ACTION_PACKAGE_REMOVED)) {
+                    if (ThemeManager.DEBUG) {
+                        Log.i(ThemeManager.TAG, "Handling removed theme package: " + pkg);
+                    }
+                    db.delete(TABLE_NAME, ThemeColumns.THEME_PACKAGE + " = ?",
+                            new String[] { pkg });
+                    notifyChanges();
+                }
+            } catch (NameNotFoundException e) {
+                if (ThemeManager.DEBUG) {
+                    Log.d(ThemeManager.TAG, "Unexpected package manager inconsistency detected", e);
+                }
+            }
+        }
+    };
 
     private Cursor queryThemes(int type, Uri uri, SQLiteDatabase db, String[] projection,
             String selection, String[] selectionArgs, String sortOrder) {
@@ -129,8 +504,8 @@ public class ThemesProvider extends ContentProvider {
             c.setNotificationUri(getContext().getContentResolver(), uri);
         }
         return c;
-    }    
-    
+    }
+
     @Override
     public String getType(Uri uri) {
         int type = URI_MATCHER.match(uri);
@@ -143,10 +518,10 @@ public class ThemesProvider extends ContentProvider {
                 throw new IllegalArgumentException("Unknown URI: " + uri);
         }
     }
-    
+
     private void checkForRequiredArguments(ContentValues values) {
         if (!values.containsKey(ThemeColumns.THEME_PACKAGE)) {
-            throw new IllegalArgumentException("Required argument missing: " + 
+            throw new IllegalArgumentException("Required argument missing: " +
                     ThemeColumns.THEME_PACKAGE);
         }
         if (!values.containsKey(ThemeColumns.THEME_ID)) {

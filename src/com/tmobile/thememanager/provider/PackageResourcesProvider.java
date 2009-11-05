@@ -1,15 +1,12 @@
 package com.tmobile.thememanager.provider;
 
 import com.tmobile.thememanager.ThemeManager;
-import com.tmobile.thememanager.provider.PackageResources.ImageColumns;
-import com.tmobile.thememanager.provider.PackageResources.RingtoneColumns;
-import com.tmobile.thememanager.utils.DatabaseUtilities;
 
 import android.app.ActivityManager;
 import android.content.ContentProvider;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.IExtendedContentProvider;
 import android.content.UriMatcher;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -18,105 +15,37 @@ import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
-import android.os.Binder;
 import android.os.ParcelFileDescriptor;
-import android.os.Process;
 import android.provider.DrmStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
 
 import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Proxy uri-based access to assets from theme packages. DRM security is upheld
- * at this layer.
+ * at this layer which is why we can't just use the built-in android.resource://
+ * uri scheme.
  */
-public class PackageResourcesProvider extends ContentProvider
-            implements IExtendedContentProvider {
+public class PackageResourcesProvider extends ContentProvider {
     private static final UriMatcher URI_MATCHER = new UriMatcher(UriMatcher.NO_MATCH);
 
-    private static final int TYPE_RINGTONE = 0;
-    private static final int TYPE_RINGTONES = 1;
-
-    private static final int TYPE_IMAGE = 2;
-    private static final int TYPE_IMAGES = 3;
-
-    private SQLiteOpenHelper mOpenHelper;
+    private static final int TYPE_RESOURCE_ID = 0;
+    private static final int TYPE_RESOURCE_ENTRY = 1;
+    private static final int TYPE_ASSET_PATH = 2;
 
     /* Cache AssetManager objects to speed up ringtone manipulation. */
-    private static final Map<String, Resources> mLookUpTable =
+    private static final Map<String, Resources> mResourcesTable =
         new HashMap<String, Resources>();
-
-    /* This used to interpret singular URI patterns, like TYPE_RINGTONE and TYPE_IMAGE. */
-    private static final String SINGULAR_QUERY_SELECTION = "package=? AND _id=?";
-
-    private static class OpenDatabaseHelper extends SQLiteOpenHelper {
-        private static final String DATABASE_NAME = "package_idmap.db";
-        private static final int DATABASE_VERSION = 7;
-
-        public OpenDatabaseHelper(Context context) {
-            super(context, DATABASE_NAME, null, DATABASE_VERSION);
-        }
-
-        /**
-         * Creates database the first time we try to open it.
-         */
-        @Override
-        public void onCreate(final SQLiteDatabase db) {
-            createTables(db);
-        }
-
-        @Override
-        public void onUpgrade(final SQLiteDatabase db, int oldVer, int newVer) {
-            dropTables(db);
-            createTables(db);
-        }
-
-        private void createTables(SQLiteDatabase db) {
-            db.execSQL("CREATE TABLE ringtone_map (" +
-                    PackageResources.RingtoneColumns._ID + " INTEGER PRIMARY KEY, " +
-                    PackageResources.RingtoneColumns.TITLE + " TEXT NOT NULL, " +
-                    PackageResources.RingtoneColumns.IS_DRM + " INTEGER, " +
-                    PackageResources.RingtoneColumns.PACKAGE + " TEXT NOT NULL, " +
-                    PackageResources.RingtoneColumns.THEME_NAME + " TEXT NOT NULL, " +
-                    PackageResources.RingtoneColumns.PACKAGE_FILE + " TEXT NOT NULL, " +
-                    PackageResources.RingtoneColumns.ASSET_PATH + " TEXT NOT NULL, " +
-                    PackageResources.RingtoneColumns.LOCKED_ZIPFILE_PATH + " TEXT, " +
-                    PackageResources.RingtoneColumns.IS_RINGTONE + " INTEGER, " +
-                    PackageResources.RingtoneColumns.IS_ALARM + " INTEGER, " +
-                    PackageResources.RingtoneColumns.IS_NOTIFICATION + " INTEGER" + ")");
-            db.execSQL("CREATE INDEX ringtone_map_package ON ringtone_map (package)");
-            db.execSQL("CREATE UNIQUE INDEX ringtone_map_path ON ringtone_map (package, asset_path)");
-
-            db.execSQL("CREATE TABLE image_map (" +
-                    PackageResources.ImageColumns._ID + " INTEGER PRIMARY KEY, " +
-                    PackageResources.ImageColumns.IS_DRM + " INTEGER, " +
-                    PackageResources.ImageColumns.PACKAGE + " TEXT NOT NULL, " +
-                    PackageResources.RingtoneColumns.THEME_NAME + " TEXT NOT NULL, " +
-                    PackageResources.ImageColumns.PACKAGE_FILE + " TEXT NOT NULL, " +
-                    PackageResources.ImageColumns.ASSET_PATH + " TEXT NOT NULL, " +
-                    PackageResources.ImageColumns.LOCKED_ZIPFILE_PATH + " TEXT, " +
-                    PackageResources.ImageColumns.IMAGE_TYPE + " INTEGER" + ")");
-            db.execSQL("CREATE INDEX image_map_package ON image_map (package)");
-            db.execSQL("CREATE UNIQUE INDEX image_map_path ON image_map (package, asset_path)");
-        }
-
-        private void dropTables(SQLiteDatabase db) {
-            db.execSQL("DROP TABLE IF EXISTS ringtone_map");
-            db.execSQL("DROP TABLE IF EXISTS image_map");
-        }
-    }
 
     @Override
     public boolean onCreate() {
-        mOpenHelper = new OpenDatabaseHelper(getContext());
         return true;
     }
 
@@ -130,9 +59,9 @@ public class PackageResourcesProvider extends ContentProvider
         return assets;
     }
 
-    public static final synchronized Resources getResourcesForTheme(Context context,
+    private static final synchronized Resources getResourcesForTheme(Context context,
             String packageName) throws NameNotFoundException {
-        Resources r = mLookUpTable.get(packageName);
+        Resources r = mResourcesTable.get(packageName);
         if (r != null) {
             return r;
         }
@@ -144,17 +73,6 @@ public class PackageResourcesProvider extends ContentProvider
 
         return createResourcesForTheme(context, packageName,
                 pi.applicationInfo.publicSourceDir, pi.getLockedZipFilePath());
-    }
-
-    public static final synchronized Resources getResourcesForTheme(Context context,
-            String packageName, String packageFileName, String packageLockedZipFile) {
-        Resources r = mLookUpTable.get(packageName);
-        if (r != null) {
-            return r;
-        }
-
-        return createResourcesForTheme(context, packageName,
-                packageFileName, packageLockedZipFile);
     }
 
     private static final synchronized Resources createResourcesForTheme(Context context,
@@ -169,42 +87,14 @@ public class PackageResourcesProvider extends ContentProvider
         Configuration config = am.getConfiguration();
         Resources r = new Resources(assets, metrics, config);
 
-        mLookUpTable.put(packageName, r);
+        mResourcesTable.put(packageName, r);
         return r;
     }
 
-    public static final synchronized void deleteResourcesForTheme(String packageName) {
-        mLookUpTable.remove(packageName);
+    private static final synchronized void deleteResourcesForTheme(String packageName) {
+        mResourcesTable.remove(packageName);
     }
 
-    @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
-            String sortOrder) {
-        SQLiteDatabase db = mOpenHelper.getReadableDatabase();
-        int type = URI_MATCHER.match(uri);
-        switch (type) {
-            /*
-             * XXX: Enforce that projection contains only "safe" columns (_ID,
-             * TITLE, and the URI string literal)?
-             */
-            case TYPE_RINGTONES:
-            case TYPE_RINGTONE:
-                if (type == TYPE_RINGTONE) {
-                    selection = DatabaseUtilities.appendSelection(selection,
-                            SINGULAR_QUERY_SELECTION);
-                    selectionArgs = DatabaseUtilities.appendSelectionArgs(selectionArgs,
-                            DatabaseUtilities.getLastTwoPathSegments(uri));
-                }
-                return db.query("ringtone_map", projection, selection, selectionArgs, null, null,
-                        sortOrder);
-            case TYPE_IMAGES:
-                return db.query("image_map", projection, selection, selectionArgs, null, null,
-                        sortOrder);
-            default:
-                throw new IllegalArgumentException("Unknown URI: " + uri);
-        }
-    }
-    
     @Override
     public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
         /*
@@ -226,219 +116,86 @@ public class PackageResourcesProvider extends ContentProvider
 
     @Override
     public AssetFileDescriptor openAssetFile(Uri uri, String mode) throws FileNotFoundException {
-        SQLiteDatabase db = mOpenHelper.getReadableDatabase();
-        Cursor c = null;
-        switch (URI_MATCHER.match(uri)) {
-            case TYPE_RINGTONE:
-                c = db.query("ringtone_map", new String[] {
-                        RingtoneColumns.PACKAGE,
-                        RingtoneColumns.PACKAGE_FILE,
-                        RingtoneColumns.ASSET_PATH,
-                        RingtoneColumns.IS_DRM,
-                        RingtoneColumns.LOCKED_ZIPFILE_PATH
-                }, SINGULAR_QUERY_SELECTION,
-                DatabaseUtilities.getLastTwoPathSegments(uri),
-                null, null, null);
-                if (c == null) {
-                    return null;
-                }
+        int type = URI_MATCHER.match(uri);
 
+        List<String> segments = uri.getPathSegments();
+        if (segments.size() < 3) {
+            throw new IllegalArgumentException("Can't handle URI: " + uri);
+        }
+
+        String packageName = segments.get(0);
+        Resources packageRes = null;
+        try {
+            packageRes = getResourcesForTheme(getContext(), packageName);
+        } catch (NameNotFoundException e) {
+            throw new FileNotFoundException(e.toString());
+        }
+        if (packageRes == null) {
+            throw new FileNotFoundException("Unable to access package: " + packageName);
+        }
+
+        switch (type) {
+            case TYPE_RESOURCE_ID:
+            case TYPE_RESOURCE_ENTRY:
+                int resId;
+                if (type == TYPE_RESOURCE_ID) {
+                    resId = (int)ContentUris.parseId(uri);
+                } else {
+                    resId = packageRes.getIdentifier(segments.get(3), segments.get(2),
+                            packageName);
+                }
+                if (resId == 0) {
+                    throw new IllegalArgumentException("No resource found for URI: " + uri);
+                }
+                return packageRes.openRawResourceFd(resId);
+
+            case TYPE_ASSET_PATH:
+                String assetPath = uri.getLastPathSegment();
+                if (assetPath.contains("/locked/")) {
+                    /* Make sure the caller has DRM access permission.  This should basically only be the media service process.  This call technically checks whether our own process holds this permission as well so it's extremely important the ThemeManager never requests this in the manifest. */
+                    DrmStore.enforceAccessDrmPermission(getContext());
+                }
                 try {
-                    if (c.moveToFirst() == false) {
-                        return null;
-                    }
-                    String packageName = c.getString(c.getColumnIndex(RingtoneColumns.PACKAGE));
-                    String assetPath = c.getString(c.getColumnIndex(RingtoneColumns.ASSET_PATH));
-                    int isDrm = c.getInt(c.getColumnIndex(RingtoneColumns.IS_DRM));
-                    String lockedZipFilePath = c.getString(c.getColumnIndex(RingtoneColumns.LOCKED_ZIPFILE_PATH));
-                    String packageFile = c.getString(c.getColumnIndex(RingtoneColumns.PACKAGE_FILE));
-
-                    if (isDrm != 0) {
-                        /*
-                         * XXX: WE MUST NOT REQUEST DRM ACCESS PERMISSION OR
-                         * THIS WILL ALWAYS SUCCEED!
-                         */
-                        DrmStore.enforceAccessDrmPermission(getContext());
-                    }
-
-                    Resources r = getResourcesForTheme(getContext(), packageName, packageFile,
-                            lockedZipFilePath);
-                    return r.getAssets().openFd(assetPath);
-                } catch (Exception e) {
-                    throw new FileNotFoundException("Could not open URI " + uri + ": " + e);
-                } finally {
-                    c.close();
+                    return packageRes.getAssets().openFd(assetPath);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            case TYPE_IMAGE:
-                try {
-                    PairResult pair = getPairResultForImage(uri);
-                    if (pair != null) {
-                        return pair.am.openFd(pair.assetPath);
-                    }
-                } catch (Exception e) {
-                    Log.e(ThemeManager.TAG, "Failed in openAssetFile", e);
-                }
-                return null;
+
             default:
                 throw new IllegalArgumentException("Unknown URI: " + uri);
         }
     }
-    
+
     @Override
     public String getType(Uri uri) {
         return null;
     }
 
     @Override
+    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+            String sortOrder) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Uri insert(Uri uri, ContentValues values) {
-        if (Binder.getCallingPid() != android.os.Process.myPid()) {
-            throw new SecurityException("Cannot insert into this provider");
-        }
-
-        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
-        Uri newUri = null;
-        long _id;
-
-        if (!values.containsKey(RingtoneColumns.PACKAGE)) {
-            throw new IllegalArgumentException("Required argument missing: " +
-                    RingtoneColumns.PACKAGE);
-        }
-        String packageName = values.getAsString(RingtoneColumns.PACKAGE);
-
-        switch (URI_MATCHER.match(uri)) {
-            case TYPE_RINGTONES:
-                _id = db.insert("ringtone_map", RingtoneColumns._ID, values);
-                if (_id >= 0) {
-                    newUri = PackageResources.makeUri(RingtoneColumns.CONTENT_URI,
-                            packageName, _id);
-                }
-                break;
-            case TYPE_IMAGES:
-                _id = db.insert("image_map", ImageColumns._ID, values);
-                if (_id >= 0) {
-                    newUri = PackageResources.makeUri(ImageColumns.CONTENT_URI,
-                            packageName, _id);
-                }
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown URI: " + uri);
-        }
-
-        if (newUri != null) {
-            getContext().getContentResolver().notifyChange(newUri, null);
-        }
-
-        return newUri;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
-        if (Binder.getCallingPid() != android.os.Process.myPid()) {
-            throw new SecurityException("Cannot update this provider");
-        }
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
-        if (Binder.getCallingPid() != android.os.Process.myPid()) {
-            throw new SecurityException("Cannot delete from this provider");
-        }
-
-        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
-        int count = 0;
-
-        switch (URI_MATCHER.match(uri)) {
-            case TYPE_RINGTONES:
-                count = db.delete("ringtone_map", selection, selectionArgs);
-                break;
-            case TYPE_IMAGES:
-                count = db.delete("image_map", selection, selectionArgs);
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown URI: " + uri);
-        }
-
-        return count;
-    }
-
-    public InputStream openInputStream(Uri uri) {
-        switch (URI_MATCHER.match(uri)) {
-            case TYPE_IMAGE:
-                try {
-                    PairResult pair = getPairResultForImage(uri);
-                    if (pair != null) {
-                        return pair.am.open(pair.assetPath);
-                    }
-                } catch (Exception e) {
-                    Log.e(ThemeManager.TAG, "Failed in openInputStream", e);
-                }
-        }
-        return null;
-    }
-
-    private static class PairResult {
-        AssetManager am;
-        String assetPath;
-
-        public PairResult(AssetManager _am, String _assetPath) {
-            am = _am;
-            assetPath = _assetPath;
-        }
-    }
-
-    private PairResult getPairResultForImage(Uri uri) throws Exception {
-        SQLiteDatabase db = mOpenHelper.getReadableDatabase();
-        Cursor c = db.query("image_map", new String[] {
-                            ImageColumns.PACKAGE,
-                            ImageColumns.PACKAGE_FILE,
-                            ImageColumns.ASSET_PATH,
-                            ImageColumns.IS_DRM,
-                            ImageColumns.LOCKED_ZIPFILE_PATH
-            }, SINGULAR_QUERY_SELECTION,
-            DatabaseUtilities.getLastTwoPathSegments(uri),
-            null, null, null);
-        if (c == null) {
-            return null;
-        }
-
-        try {
-            if (c.moveToFirst() == false) {
-                return null;
-            }
-            String packageName = c.getString(c.getColumnIndex(ImageColumns.PACKAGE));
-            String assetPath = c.getString(c.getColumnIndex(ImageColumns.ASSET_PATH));
-            int isDrm = c.getInt(c.getColumnIndex(ImageColumns.IS_DRM));
-            String lockedZipFilePath = c.getString(c.getColumnIndex(ImageColumns.LOCKED_ZIPFILE_PATH));
-            String packageFile = c.getString(c.getColumnIndex(ImageColumns.PACKAGE_FILE));
-
-            int pid = Binder.getCallingPid();
-            boolean calledFromSelf = (pid == Process.myPid());
-            // If this function is invoked from the ThemeManager process,
-            // skip the DRM-permission check, since we intentionally
-            // do NOT grant ThemeManager DRM-permissions!
-            if (isDrm != 0 && !calledFromSelf) {
-                /*
-                 * XXX: WE MUST NOT REQUEST DRM ACCESS PERMISSION OR
-                 * THIS WILL ALWAYS SUCCEED!
-                 */
-                DrmStore.enforceAccessDrmPermission(getContext());
-            }
-
-            Resources r = getResourcesForTheme(getContext(), packageName, packageFile,
-                    lockedZipFilePath);
-            return new PairResult(r.getAssets(), assetPath);
-        } finally {
-            c.close();
-        }
+        throw new UnsupportedOperationException();
     }
 
     static {
         /* See PackageResources#makeRingtoneUri. */
-        URI_MATCHER.addURI(PackageResources.AUTHORITY, "ringtones", TYPE_RINGTONES);
-        URI_MATCHER.addURI(PackageResources.AUTHORITY, "ringtone/*/#", TYPE_RINGTONE);
-
-        URI_MATCHER.addURI(PackageResources.AUTHORITY, "images", TYPE_IMAGES);
-        URI_MATCHER.addURI(PackageResources.AUTHORITY, "image/*/#", TYPE_IMAGE);
+        URI_MATCHER.addURI(PackageResources.AUTHORITY, "*/res/#", TYPE_RESOURCE_ID);
+        URI_MATCHER.addURI(PackageResources.AUTHORITY, "*/res/*/*", TYPE_RESOURCE_ENTRY);
+        URI_MATCHER.addURI(PackageResources.AUTHORITY, "*/assets/*", TYPE_ASSET_PATH);
     }
 }
