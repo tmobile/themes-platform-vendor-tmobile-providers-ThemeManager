@@ -204,6 +204,10 @@ public class BitmapStore extends AbstractMap<String, Bitmap> implements Map<Stri
 
     public void put(String key, int width, int height, boolean filter,
             Bitmap value, Bitmap.CompressFormat format, int quality) throws IOException {
+        if (value == null) {
+            remove(key);
+            return;
+        }
         ReentrantLock lock = getKeyLock(key);
         lock.lock();
         try {

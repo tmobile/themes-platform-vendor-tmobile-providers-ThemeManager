@@ -18,6 +18,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.ThemeInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.CustomTheme;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -46,7 +47,7 @@ public class ThemesProvider extends ContentProvider {
 
     private static class OpenDatabaseHelper extends SQLiteOpenHelper {
         private static final String DATABASE_NAME = "theme_item.db";
-        private static final int DATABASE_VERSION = 7;
+        private static final int DATABASE_VERSION = 8;
 
         public OpenDatabaseHelper(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -79,6 +80,8 @@ public class ThemesProvider extends ContentProvider {
                     ThemeColumns.STYLE_NAME + " TEXT NOT NULL, " +
                     ThemeColumns.WALLPAPER_NAME + " TEXT, " +
                     ThemeColumns.WALLPAPER_URI + " TEXT, " +
+                    ThemeColumns.LOCK_WALLPAPER_NAME + " TEXT, " +
+                    ThemeColumns.LOCK_WALLPAPER_URI + " TEXT, " +
                     ThemeColumns.RINGTONE_NAME + " TEXT, " +
                     ThemeColumns.RINGTONE_URI + " TEXT, " +
                     ThemeColumns.NOTIFICATION_RINGTONE_NAME + " TEXT, " +
@@ -193,8 +196,8 @@ public class ThemesProvider extends ContentProvider {
                      * Deal with potential package change, moving `current'
                      * along to efficiently detect differences.
                      */
-                    boolean invalidated = detectPackageChange(mDb, pi, current, currentItem,
-                            appliedTheme);
+                    boolean invalidated = detectPackageChange(getContext(), mDb, pi, current,
+                            currentItem, appliedTheme);
                     if (invalidated) {
                         notifyChanges = true;
                     }
@@ -212,8 +215,8 @@ public class ThemesProvider extends ContentProvider {
         }
     }
 
-    private static boolean detectPackageChange(SQLiteDatabase db, PackageInfo pi, Cursor current,
-            ThemeItem currentItem, CustomTheme appliedTheme) {
+    private static boolean detectPackageChange(Context context, SQLiteDatabase db,
+            PackageInfo pi, Cursor current, ThemeItem currentItem, CustomTheme appliedTheme) {
         boolean notifyChanges = false;
 
         Arrays.sort(pi.themeInfos, new Comparator<ThemeInfo>() {
@@ -269,13 +272,14 @@ public class ThemesProvider extends ContentProvider {
             boolean isCurrentTheme = ThemeUtilities.themeEquals(pi, ti, appliedTheme);
 
             if (currPackageName != null && currThemeId != null) {
-                boolean invalidated = verifyOrUpdateTheme(db, pi, ti, currentItem, isCurrentTheme);
+                boolean invalidated = verifyOrUpdateTheme(context, db, pi, ti, currentItem,
+                        isCurrentTheme);
                 if (invalidated) {
                     notifyChanges = true;
                 }
                 current.moveToNext();
             } else {
-                insertTheme(db, pi, ti, isCurrentTheme);
+                insertTheme(context, db, pi, ti, isCurrentTheme);
                 notifyChanges = true;
             }
         }
@@ -283,8 +287,8 @@ public class ThemesProvider extends ContentProvider {
         return notifyChanges;
     }
 
-    private static void populateContentValues(ContentValues outValues, PackageInfo pi,
-            ThemeInfo ti, boolean isCurrentTheme) {
+    private static void populateContentValues(Context context, ContentValues outValues,
+            PackageInfo pi, ThemeInfo ti, boolean isCurrentTheme) {
         outValues.put(ThemeColumns.IS_APPLIED, isCurrentTheme ? 1 : 0);
         outValues.put(ThemeColumns.THEME_ID, ti.themeId);
         outValues.put(ThemeColumns.THEME_PACKAGE, pi.packageName);
@@ -324,6 +328,24 @@ public class ThemesProvider extends ContentProvider {
                     PackageResources.makeAssetPathUri(pi.packageName, ti.preview)
                         .toString());
         }
+
+        /* Try to find theme attributes by convention, like HTC lock screen wallpaper. */
+        Resources themeRes = PackageResourcesProvider.getResourcesForTheme(context, pi);
+
+        int lockWallpaperResId =
+            themeRes.getIdentifier("com_htc_launcher_lockscreen_wallpaper", "drawable",
+                    pi.packageName);
+        if (lockWallpaperResId != 0) {
+            int nameId = themeRes.getIdentifier("com_htc_launcher_lockscreen_wallpaper_name",
+                    "string", pi.packageName);
+            if (nameId != 0) {
+                outValues.put(ThemeColumns.LOCK_WALLPAPER_NAME,
+                        themeRes.getString(nameId));
+            }
+            outValues.put(ThemeColumns.LOCK_WALLPAPER_URI,
+                    PackageResources.makeResourceIdUri(pi.packageName, lockWallpaperResId)
+                        .toString());
+        }
     }
 
     private static void deleteTheme(SQLiteDatabase db, ThemeItem item) {
@@ -335,20 +357,20 @@ public class ThemesProvider extends ContentProvider {
                 ThemeColumns._ID + " = " + item.getId(), null);
     }
 
-    private static void insertTheme(SQLiteDatabase db, PackageInfo pi, ThemeInfo ti,
-            boolean isCurrentTheme) {
+    private static void insertTheme(Context context, SQLiteDatabase db,
+            PackageInfo pi, ThemeInfo ti, boolean isCurrentTheme) {
         if (ThemeManager.DEBUG) {
             Log.i(ThemeManager.TAG, "ThemesProvider out of sync: inserting " +
                     pi.packageName + "/" + ti.themeId);
         }
 
         ContentValues values = new ContentValues();
-        populateContentValues(values, pi, ti, isCurrentTheme);
+        populateContentValues(context, values, pi, ti, isCurrentTheme);
         db.insert(TABLE_NAME, ThemeColumns._ID, values);
     }
 
-    private static boolean verifyOrUpdateTheme(SQLiteDatabase db, PackageInfo pi, ThemeInfo ti,
-            ThemeItem existing, boolean isCurrentTheme) {
+    private static boolean verifyOrUpdateTheme(Context context, SQLiteDatabase db,
+            PackageInfo pi, ThemeInfo ti, ThemeItem existing, boolean isCurrentTheme) {
         boolean invalidated = false;
 
         /*
@@ -357,7 +379,7 @@ public class ThemesProvider extends ContentProvider {
          * differences are found, adjust them with an update query.
          */
         ContentValues values = new ContentValues();
-        populateContentValues(values, pi, ti, isCurrentTheme);
+        populateContentValues(context, values, pi, ti, isCurrentTheme);
 
         invalidated = !equalContentValuesAndCursor(values, existing.getCursor());
 
@@ -427,7 +449,7 @@ public class ThemesProvider extends ContentProvider {
                                 new String[] { pkg }, null, null, ThemeColumns.THEME_ID);
                         ThemeItem dao = ThemeItem.getInstance(cursor);
                         boolean invalidated =
-                            detectPackageChange(db, pi, cursor, dao,
+                            detectPackageChange(context, db, pi, cursor, dao,
                                     ThemeUtilities.getAppliedTheme(context));
                         if (invalidated) {
                             notifyChanges();
@@ -440,7 +462,7 @@ public class ThemesProvider extends ContentProvider {
                     PackageInfo pi = context.getPackageManager().getPackageInfo(pkg, 0);
                     if (pi != null && pi.themeInfos != null) {
                         for (ThemeInfo ti: pi.themeInfos) {
-                            insertTheme(db, pi, ti, false);
+                            insertTheme(context, db, pi, ti, false);
                         }
                     }
                     notifyChanges();

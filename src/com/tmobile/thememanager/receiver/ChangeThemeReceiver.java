@@ -23,12 +23,7 @@ public class ChangeThemeReceiver extends BroadcastReceiver {
             return;
         }
         try {
-            Uri wallpaperUri = (Uri)intent.getParcelableExtra(ThemeManager.EXTRA_WALLPAPER_URI);
-            Uri ringtoneUri = (Uri)intent.getParcelableExtra(ThemeManager.EXTRA_RINGTONE_URI);
-            Uri notificationRingtoneUri =
-                (Uri)intent.getParcelableExtra(ThemeManager.EXTRA_NOTIFICATION_RINGTONE_URI);
-            ThemeUtilities.applyTheme(context, item, intent.getType(),
-                    wallpaperUri, ringtoneUri, notificationRingtoneUri);
+            ThemeUtilities.applyTheme(context, item, intent);
         } finally {
             item.close();
         }

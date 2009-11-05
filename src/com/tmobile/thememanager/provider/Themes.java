@@ -119,6 +119,9 @@ public class Themes {
         public static final String WALLPAPER_NAME = "wallpaper_name";
         public static final String WALLPAPER_URI = "wallpaper_uri";
 
+        public static final String LOCK_WALLPAPER_NAME = "lock_wallpaper_name";
+        public static final String LOCK_WALLPAPER_URI = "lock_wallpaper_uri";
+
         public static final String RINGTONE_NAME = "ringtone_name";
         public static final String RINGTONE_URI = "ringtone_uri";
         public static final String NOTIFICATION_RINGTONE_NAME = "notif_ringtone_name";

@@ -21,6 +21,7 @@ public class ThemeItem extends AbstractDAOItem {
     private int mColumnIsDRM;
     private int mColumnWallpaperName;
     private int mColumnWallpaperUri;
+    private int mColumnLockWallpaperUri;
     private int mColumnRingtoneName;
     private int mColumnRingtoneUri;
     private int mColumnNotifRingtoneName;
@@ -57,6 +58,7 @@ public class ThemeItem extends AbstractDAOItem {
         mColumnIsDRM = c.getColumnIndex(ThemeColumns.IS_DRM);
         mColumnWallpaperName = c.getColumnIndex(ThemeColumns.WALLPAPER_NAME);
         mColumnWallpaperUri = c.getColumnIndex(ThemeColumns.WALLPAPER_URI);
+        mColumnLockWallpaperUri = c.getColumnIndex(ThemeColumns.LOCK_WALLPAPER_URI);
         mColumnRingtoneName = c.getColumnIndex(ThemeColumns.RINGTONE_NAME);
         mColumnRingtoneUri = c.getColumnIndex(ThemeColumns.RINGTONE_URI);
         mColumnNotifRingtoneName = c.getColumnIndex(ThemeColumns.NOTIFICATION_RINGTONE_NAME);
@@ -123,6 +125,10 @@ public class ThemeItem extends AbstractDAOItem {
 
     public Uri getWallpaperUri(Context context) {
         return parseUriNullSafe(mCursor.getString(mColumnWallpaperUri));
+    }
+
+    public Uri getLockWallpaperUri(Context context) {
+        return parseUriNullSafe(mCursor.getString(mColumnLockWallpaperUri));
     }
 
     public Uri getRingtoneUri(Context context) {

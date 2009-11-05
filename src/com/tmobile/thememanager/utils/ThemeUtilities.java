@@ -1,5 +1,8 @@
 package com.tmobile.thememanager.utils;
 
+import com.tmobile.profilemanager.Rosie;
+import com.tmobile.profilemanager.provider.ProfileItem;
+import com.tmobile.profilemanager.provider.Profiles;
 import com.tmobile.thememanager.ThemeManager;
 import com.tmobile.thememanager.provider.ThemeItem;
 import com.tmobile.thememanager.provider.Themes;
@@ -16,9 +19,19 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.util.Log;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 public class ThemeUtilities {
+    /**
+     * Lock held while the temporary lock wallpaper is being written to disk.
+     * This is used to prevent a possible race condition if multiple events
+     * occur in quick succession to apply a specific theme with a lock paper.
+     */
+    private static Object mLockWallpaperLock = new Object();
+
     /**
      * Applies just the configuration portion of the theme. No wallpapers or
      * ringtones are set.
@@ -48,7 +61,7 @@ public class ThemeUtilities {
      * Applies a full theme.  This is a superset of applyStyle.
      */
     public static void applyTheme(Context context, ThemeItem theme) {
-        applyTheme(context, theme, ThemeColumns.CONTENT_ITEM_TYPE, null, null, null);
+        applyTheme(context, theme, new Intent().setType(ThemeColumns.CONTENT_ITEM_TYPE));
     }
 
     /**
@@ -56,11 +69,20 @@ public class ThemeUtilities {
      * caller to override certain components of a theme with user-supplied
      * values.
      */
-    public static void applyTheme(Context context, ThemeItem theme, String themeType,
-            Uri wallpaperUri, Uri ringtoneUri, Uri notificationRingtoneUri) {
+    public static void applyTheme(Context context, ThemeItem theme, Intent request) {
+        String themeType = request.getType();
+        boolean dontSetLockWallpaper =
+            request.getBooleanExtra(ThemeManager.EXTRA_DONT_SET_LOCK_WALLPAPER, false);
+        Uri wallpaperUri = (Uri)request.getParcelableExtra(ThemeManager.EXTRA_WALLPAPER_URI);
+        Uri lockWallpaperUri = (Uri)request.getParcelableExtra(ThemeManager.EXTRA_LOCK_WALLPAPER_URI);
+        Uri ringtoneUri = (Uri)request.getParcelableExtra(ThemeManager.EXTRA_RINGTONE_URI);
+        Uri notificationRingtoneUri =
+            (Uri)request.getParcelableExtra(ThemeManager.EXTRA_NOTIFICATION_RINGTONE_URI);
+
         if (ThemeManager.DEBUG) {
             Log.i(ThemeManager.TAG, "applyTheme: theme=" + theme.getUri(context) +
                     ", wallpaperUri=" + wallpaperUri +
+                    ", lockWallpaperUri=" + lockWallpaperUri +
                     ", ringtoneUri=" + ringtoneUri +
                     ", notificationRingtoneUri=" + notificationRingtoneUri);
         }
@@ -70,6 +92,15 @@ public class ThemeUtilities {
         }
         if (wallpaperUri != null) {
             setWallpaper(context, wallpaperUri);
+        }
+
+        if (!dontSetLockWallpaper) {
+            if (lockWallpaperUri == null) {
+                lockWallpaperUri = theme.getLockWallpaperUri(context);
+            }
+            if (lockWallpaperUri != null) {
+                setLockWallpaper(context, lockWallpaperUri);
+            }
         }
 
         if (ringtoneUri == null) {
@@ -125,6 +156,56 @@ public class ThemeUtilities {
             }
         } catch (Exception e) {
             Log.e(ThemeManager.TAG, "Could not set wallpaper", e);
+        }
+    }
+
+    private static String getLockWallpaperPath(Context context) {
+        ProfileItem item = ProfileItem.getInstance(Profiles.getActiveProfile(context));
+        try {
+            String basePath = "/data/misc/lockscreen/lock_screen_port";
+            if (item != null) {
+                return basePath + '_' + item.getSceneId();
+            } else {
+                return basePath;
+            }
+        } finally {
+            if (item != null) {
+                item.close();
+            }
+        }
+    }
+
+    public static void setLockWallpaper(Context context, Uri uri) {
+        synchronized (mLockWallpaperLock) {
+            InputStream in = null;
+            FileOutputStream out = null;
+            File tmpFile = new File(context.getCacheDir(), "lock_wallpaper.tmp");
+            try {
+                /* First store to a temporary location. */
+                in = context.getContentResolver().openInputStream(uri);
+                out = new FileOutputStream(tmpFile);
+                IOUtilities.connectIO(in, out);
+
+                /* Then rename into place. */
+                File dstFile = new File(getLockWallpaperPath(context));
+                if (tmpFile.renameTo(dstFile)) {
+                    context.sendBroadcast(new Intent(Rosie.ACTION_LOCK_WALLPAPER_CHANGED));                    
+                } else {
+                    Log.w(ThemeManager.TAG, "Unable to write to lock screen wallpaper at " + dstFile);
+                }
+            } catch (IOException e) {
+                Log.w(ThemeManager.TAG, "Unable to store lock screen wallpaper: " + e);
+            } finally {
+                if (in != null) {
+                    IOUtilities.close(in);
+                }
+                if (out != null) {
+                    IOUtilities.close(out);
+                }
+                if (tmpFile.exists()) {
+                    tmpFile.delete();
+                }
+            }
         }
     }
 

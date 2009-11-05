@@ -59,7 +59,7 @@ public class PackageResourcesProvider extends ContentProvider {
         return assets;
     }
 
-    private static final synchronized Resources getResourcesForTheme(Context context,
+    public static final synchronized Resources getResourcesForTheme(Context context,
             String packageName) throws NameNotFoundException {
         Resources r = mResourcesTable.get(packageName);
         if (r != null) {
@@ -72,6 +72,16 @@ public class PackageResourcesProvider extends ContentProvider {
         }
 
         return createResourcesForTheme(context, packageName,
+                pi.applicationInfo.publicSourceDir, pi.getLockedZipFilePath());
+    }
+
+    public static final synchronized Resources getResourcesForTheme(Context context,
+            PackageInfo pi) {
+        Resources r = mResourcesTable.get(pi.packageName);
+        if (r != null) {
+            return r;
+        }
+        return createResourcesForTheme(context, pi.packageName,
                 pi.applicationInfo.publicSourceDir, pi.getLockedZipFilePath());
     }
 
