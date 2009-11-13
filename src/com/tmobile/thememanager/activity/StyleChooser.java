@@ -67,7 +67,7 @@ public class StyleChooser extends HtcListActivity implements OnItemClickListener
 
         @Override
         public View newView(Context context, Cursor cursor, ViewGroup parent) {
-            return getInflater().inflate(android.R.layout.simple_list_item_checked,
+            return getInflater().inflate(R.layout.light_list_item_checked,
                     parent, false);
         }
     }

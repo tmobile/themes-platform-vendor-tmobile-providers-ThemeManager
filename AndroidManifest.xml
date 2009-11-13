@@ -43,7 +43,8 @@
         pluto:isThemeable="true">
 
         <uses-library android:name="com.htc.framework" />
-
+        <uses-library android:name="com.tmobile.widget" />
+        
         <activity
             android:name=".activity.StyleChooser"
             android:label="@string/style_chooser_title">
