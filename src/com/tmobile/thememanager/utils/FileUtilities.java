@@ -42,10 +42,15 @@ public class FileUtilities {
      * An empty array of type <code>File</code>.
      */
     public static final File[] EMPTY_FILE_ARRAY = new File[0];
-    
-    /**
-     * basename() and removeExtension() Added by MSDF @ T-Mobile.  Not Apache licensed.
+
+    /*
+     * encodePathSegment, basename, and removeExtension added by MSDF @
+     * T-Mobile. Not Apache licensed.
      */
+    public static String encodePathSegment(String path) {
+        return path.replaceAll(File.separator, "+");
+    }
+
     public static String basename(File file) {
         return basename(file.getAbsolutePath());
     }

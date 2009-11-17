@@ -65,7 +65,7 @@ public class BitmapStore extends AbstractMap<String, Bitmap> implements Map<Stri
     }
 
     private File getKeyFile(String key, int width, int height, boolean filter) {
-        StringBuilder b = new StringBuilder(key.replaceAll(File.separator, "+"));
+        StringBuilder b = new StringBuilder(FileUtilities.encodePathSegment(key));
         if (width > 0 || height > 0) {
             b.append('-');
             b.append(width).append('x').append(height);
