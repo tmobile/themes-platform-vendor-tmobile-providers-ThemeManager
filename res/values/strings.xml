@@ -52,13 +52,13 @@
     <string name="permdesc_access_DrmThemeResources">Allows an application read access to DRM-protected media resources of Theme Packages</string>
 
     <string name="permlab_set_theme">Set globally applied theme</string>
-    <string name="permdesc_set_theme">Allows an application to change your phone's visual theme.</string>
+    <string name="permdesc_set_theme">Allows an application to change your phone\'s visual theme.</string>
 
     <string name="delete_theme">Delete theme</string>
 
     <string name="delete_dialog_title">Delete theme</string>
     <string name="delete_dialog_message">Are you sure you want to delete this theme?</string>
-    <string name="delete_dialog_message_if_applied">Deleting this theme will return to your phone's default theme. Are you sure you want to delete this theme?</string>
+    <string name="delete_dialog_message_if_applied">Deleting this theme will return to your phone\'s default theme. Are you sure you want to delete this theme?</string>
 
     <string name="applydefaulttheme_dialog_title">Apply Default Theme</string>
     <string name="applydefaulttheme_dialog_message">Unrecoverable error! The default theme will be applied.</string>
