@@ -23,3 +23,6 @@ LOCAL_JAVA_LIBRARIES := com.tmobile.widget \
 # LOCAL_CERTIFICATE := theme_manager
 
 include $(BUILD_PACKAGE)
+
+# including the test apk
+include $(call all-makefiles-under,$(LOCAL_PATH))

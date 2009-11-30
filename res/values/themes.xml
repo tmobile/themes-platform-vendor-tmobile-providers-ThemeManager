@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Performance optimization theme for any Activity which is fully
-         opaque. -->
-    <style name="NoBackgroundAndNoTitle">
-        <item name="android:windowBackground">@null</item>
-        <item name="android:windowNoTitle">true</item>
-    </style>
-</resources>

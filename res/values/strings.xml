@@ -1,67 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name">Personalize</string>
-    <string name="theme_chooser_title">Theme Chooser</string>
-    <string name="style_chooser_title">Pick an appearance</string>
-    <string name="theme_intent_title">T-Mobile themes</string>
-    <string name="style_intent_title">T-Mobile styles</string>
+    <string name="app_name">Themes Provider</string>
 
-    <string name="set_theme">Set Theme</string>
-    <string name="preview_element_1">List Item</string>
-    <string name="preview_element_2">List with Button</string>
-    <string name="preview_element_3">List with CheckBox</string>
-    <string name="preview_button">Button</string>
-
-    <string name="text_preview_mode">Preview Mode</string>
-
-    <string name="author">Author</string>
-    <string name="drm_warning">This theme is DRM protected.</string>
-
-    <string name="btn_apply">Apply</string>
-    <string name="btn_cancel">Cancel</string>
-    <string name="btn_save">Save</string>
-    <string name="btn_simple_apply">Apply</string>
-    <string name="btn_yes">Yes</string>
-    <string name="btn_ok">OK</string>
-
-    <string name="title_wallpaper">Wallpaper</string>
-    <string name="desc_wallpaper">Changes current wallpaper</string>
-    
-    <string name="title_ringtone">Phone Ringtone</string>
-    <string name="desc_ringtone">Changes current ringtone</string>
-    
-    <string name="title_notification">Phone Notification</string>
-    <string name="desc_notification">Changes notification sounds</string>
-    
-    <string name="title_themes">Themes</string>
-    <string name="desc_themes">Change to different theme</string>
-<!--
-    <string name="title_shop">Shop</string>
-    <string name="desc_shop">Shop for ringtones, wallpaper, themes</string>
--->
-    <string name="choose_wallpaper">Theme Wallpapers</string>
-    <string name="pick_wallpaper">Pick Wallpaper</string>
-    <string name="set_wallpaper">Set Wallpaper</string>
-
-    <!-- Button label on Wallpaper Gallery screen; user selects this button to set a specific wallpaper -->
-    <string name="wallpaper_instructions">Set wallpaper</string>
-    
-    <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <!-- Title of an application permission, listed so the user can choose
+         whether they want to allow the application to do this. -->
     <string name="permlab_access_DrmThemeResources">read DRM-protected media resources</string>
-    <!-- Description of an application permission, allowing access to DRM-protected media resources of theme packages. -->
+
+    <!-- Description of an application permission, allowing access to
+         DRM-protected media resources of theme packages. -->
     <string name="permdesc_access_DrmThemeResources">Allows an application read access to DRM-protected media resources of Theme Packages</string>
 
     <string name="permlab_set_theme">Set globally applied theme</string>
     <string name="permdesc_set_theme">Allows an application to change your phone\'s visual theme.</string>
-
-    <string name="delete_theme">Delete theme</string>
-
-    <string name="delete_dialog_title">Delete theme</string>
-    <string name="delete_dialog_message">Are you sure you want to delete this theme?</string>
-    <string name="delete_dialog_message_if_applied">Deleting this theme will return to your phone\'s default theme. Are you sure you want to delete this theme?</string>
-
-    <string name="applydefaulttheme_dialog_title">Apply Default Theme</string>
-    <string name="applydefaulttheme_dialog_message">Unrecoverable error! The default theme will be applied.</string>
-
-    <string name="set_wallpaper_error_toast">Failed to set wallpaper.</string>
 </resources>
