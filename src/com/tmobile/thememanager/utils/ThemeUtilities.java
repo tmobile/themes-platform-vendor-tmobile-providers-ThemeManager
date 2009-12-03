@@ -71,13 +71,25 @@ public class ThemeUtilities {
      */
     public static void applyTheme(Context context, ThemeItem theme, Intent request) {
         String themeType = request.getType();
+        boolean extendedThemeChange =
+            request.getBooleanExtra(ThemeManager.EXTRA_EXTENDED_THEME_CHANGE, false);
         boolean dontSetLockWallpaper =
             request.getBooleanExtra(ThemeManager.EXTRA_DONT_SET_LOCK_WALLPAPER, false);
-        Uri wallpaperUri = (Uri)request.getParcelableExtra(ThemeManager.EXTRA_WALLPAPER_URI);
-        Uri lockWallpaperUri = (Uri)request.getParcelableExtra(ThemeManager.EXTRA_LOCK_WALLPAPER_URI);
-        Uri ringtoneUri = (Uri)request.getParcelableExtra(ThemeManager.EXTRA_RINGTONE_URI);
-        Uri notificationRingtoneUri =
-            (Uri)request.getParcelableExtra(ThemeManager.EXTRA_NOTIFICATION_RINGTONE_URI);
+
+        Uri wallpaperUri = null;
+        Uri lockWallpaperUri = null;
+        Uri ringtoneUri = null;
+        Uri notificationRingtoneUri = null;
+
+        /*
+         * Extended API is used by profile switch to supply theme "overrides".
+         */
+        if (extendedThemeChange) {
+            wallpaperUri = (Uri)request.getParcelableExtra(ThemeManager.EXTRA_WALLPAPER_URI);
+            lockWallpaperUri = (Uri)request.getParcelableExtra(ThemeManager.EXTRA_LOCK_WALLPAPER_URI);
+            ringtoneUri = (Uri)request.getParcelableExtra(ThemeManager.EXTRA_RINGTONE_URI);
+            notificationRingtoneUri = (Uri)request.getParcelableExtra(ThemeManager.EXTRA_NOTIFICATION_RINGTONE_URI);
+        }
 
         if (ThemeManager.DEBUG) {
             Log.i(ThemeManager.TAG, "applyTheme: theme=" + theme.getUri(context) +
@@ -189,7 +201,7 @@ public class ThemeUtilities {
                 /* Then rename into place. */
                 File dstFile = new File(getLockWallpaperPath(context));
                 if (tmpFile.renameTo(dstFile)) {
-                    context.sendBroadcast(new Intent(Rosie.ACTION_LOCK_WALLPAPER_CHANGED));                    
+                    context.sendBroadcast(new Intent(Rosie.ACTION_LOCK_WALLPAPER_CHANGED));
                 } else {
                     Log.w(ThemeManager.TAG, "Unable to write to lock screen wallpaper at " + dstFile);
                 }

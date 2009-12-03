@@ -82,6 +82,11 @@ public class Themes {
         changeTheme(context, new Intent(ThemeManager.ACTION_CHANGE_THEME, themeUri));
     }
 
+    public static void changeStyle(Context context, Uri styleUri) {
+        changeTheme(context, new Intent(ThemeManager.ACTION_CHANGE_THEME).setDataAndType(styleUri,
+                ThemeColumns.STYLE_CONTENT_ITEM_TYPE));
+    }
+
     /**
      * Alternate API to {@link #changeTheme(Context, Uri)} which allows you to
      * customize the intent that is delivered. This is used to access more
