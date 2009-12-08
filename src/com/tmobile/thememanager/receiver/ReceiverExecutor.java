@@ -2,6 +2,7 @@ package com.tmobile.thememanager.receiver;
 
 import com.tmobile.thememanager.ThemeManager;
 
+import android.os.Process;
 import android.util.Log;
 
 import java.util.concurrent.BlockingQueue;
@@ -38,25 +39,33 @@ public class ReceiverExecutor {
      * inserted to measure job performance.
      */
     public static void execute(String commandName, Runnable command) {
-        sExecutor.execute(ThemeManager.DEBUG ? new TimedRunnable(commandName, command) : command);
+        sExecutor.execute(new WrappedRunnable(commandName, command));
     }
 
-    private static class TimedRunnable implements Runnable {
+    private static class WrappedRunnable implements Runnable {
         private final String mCommandName;
         private final Runnable mRunnable;
 
-        public TimedRunnable(String commandName, Runnable runnable) {
+        public WrappedRunnable(String commandName, Runnable runnable) {
             mCommandName = commandName;
             mRunnable = runnable;
         }
 
         public void run() {
-            long startTime = System.currentTimeMillis();
+            /* Set background priority to keep the UI responsive. */
+            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+
+            long startTime;
+            if (ThemeManager.DEBUG) {
+                startTime = System.currentTimeMillis();
+            }
             try {
                 mRunnable.run();
             } finally {
-                long elapsed = System.currentTimeMillis() - startTime;
-                Log.d(TAG, mCommandName + " took " + elapsed + " ms");
+                if (ThemeManager.DEBUG) {
+                    long elapsed = System.currentTimeMillis() - startTime;
+                    Log.d(TAG, mCommandName + " took " + elapsed + " ms");
+                }
             }
         }
     }

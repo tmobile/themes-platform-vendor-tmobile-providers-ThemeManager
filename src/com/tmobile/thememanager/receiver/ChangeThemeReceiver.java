@@ -22,7 +22,6 @@ public class ChangeThemeReceiver extends BroadcastReceiver {
 
         ReceiverExecutor.execute(getClass().getSimpleName(), new Runnable() {
             public void run() {
-                Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
                 handleChangeTheme(context, intent);
             }
         });
@@ -36,6 +35,7 @@ public class ChangeThemeReceiver extends BroadcastReceiver {
         }
         try {
             if (intent.getBooleanExtra(ThemeManager.EXTRA_EXTENDED_THEME_CHANGE, false) ||
+                    intent.getType() == null ||
                     ThemeColumns.CONTENT_ITEM_TYPE.equals(intent.getType())) {
                 ThemeUtilities.applyTheme(context, item, intent);
             } else if (ThemeColumns.STYLE_CONTENT_ITEM_TYPE.equals(intent.getType())) {
