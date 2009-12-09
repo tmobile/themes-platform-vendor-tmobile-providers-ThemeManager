@@ -42,6 +42,13 @@ public class ReceiverExecutor {
         sExecutor.execute(new WrappedRunnable(commandName, command));
     }
 
+    /**
+     * @see #execute(String, Runnable)
+     */
+    public static void execute(Runnable command) {
+        execute(null, command);
+    }
+
     private static class WrappedRunnable implements Runnable {
         private final String mCommandName;
         private final Runnable mRunnable;
@@ -55,14 +62,14 @@ public class ReceiverExecutor {
             /* Set background priority to keep the UI responsive. */
             Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
 
-            long startTime;
-            if (ThemeManager.DEBUG) {
+            long startTime = 0;
+            if (ThemeManager.DEBUG && mCommandName != null) {
                 startTime = System.currentTimeMillis();
             }
             try {
                 mRunnable.run();
             } finally {
-                if (ThemeManager.DEBUG) {
+                if (ThemeManager.DEBUG && mCommandName != null) {
                     long elapsed = System.currentTimeMillis() - startTime;
                     Log.d(TAG, mCommandName + " took " + elapsed + " ms");
                 }
