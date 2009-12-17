@@ -194,7 +194,11 @@ public class ThemesProvider extends ContentProvider {
 
                     /*
                      * Deal with potential package change, moving `current'
-                     * along to efficiently detect differences.
+                     * along to efficiently detect differences. This method
+                     * handles insert, delete, and modify returning with
+                     * `current' positioned ahead of the theme matching the last
+                     * of `pi's ThemeInfo objects (or passed the last
+                     * entry if the cursor is exhausted).
                      */
                     boolean invalidated = detectPackageChange(getContext(), mDb, pi, current,
                             currentItem, appliedTheme);
@@ -203,6 +207,15 @@ public class ThemesProvider extends ContentProvider {
                     }
 
                     mDb.yieldIfContendedSafely();
+                }
+
+                /*
+                 * Delete any items left-over that were not found in
+                 * `themePackages'.
+                 */
+                while (current.moveToNext()) {
+                    deleteTheme(mDb, currentItem);
+                    notifyChanges = true;
                 }
             } finally {
                 if (currentItem != null) {
