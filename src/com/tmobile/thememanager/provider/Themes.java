@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.res.CustomTheme;
 import android.database.Cursor;
 import android.net.Uri;
+import android.text.TextUtils;
 
 public class Themes {
     public static final String AUTHORITY = "com.tmobile.thememanager.themes";
@@ -19,9 +20,14 @@ public class Themes {
     private Themes() {}
 
     public static Uri getThemeUri(Context context, String packageName, String themeId) {
-        return ThemeColumns.CONTENT_URI.buildUpon()
-            .appendPath(packageName)
-            .appendPath(themeId).build();
+        if (TextUtils.isEmpty(packageName) && TextUtils.isEmpty(themeId)) {
+            return ThemeColumns.CONTENT_URI.buildUpon()
+                    .appendEncodedPath("system").build();
+        } else {
+            return ThemeColumns.CONTENT_URI.buildUpon()
+                    .appendPath(packageName)
+                    .appendPath(themeId).build();
+        }
     }
 
     public static Uri getDefaultThemeUri(Context context) {

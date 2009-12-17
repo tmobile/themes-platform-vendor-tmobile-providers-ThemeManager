@@ -42,6 +42,7 @@ public class ThemesProvider extends ContentProvider {
 
     private static final int TYPE_THEMES = 0;
     private static final int TYPE_THEME = 1;
+    private static final int TYPE_THEME_SYSTEM = 2;
 
     private SQLiteOpenHelper mOpenHelper;
 
@@ -91,6 +92,16 @@ public class ThemesProvider extends ContentProvider {
                     ")");
             db.execSQL("CREATE INDEX themeitem_map_package ON themeitem_map (theme_package)");
             db.execSQL("CREATE UNIQUE INDEX themeitem_map_key ON themeitem_map (theme_package, theme_id)");
+
+            db.execSQL("INSERT INTO themeitem_map (" +
+                    ThemeColumns.THEME_PACKAGE + ", " +
+                    ThemeColumns.THEME_ID + ", " +
+                    ThemeColumns.AUTHOR + ", " +
+                    ThemeColumns.IS_SYSTEM + ", " +
+                    ThemeColumns.NAME + ", " +
+                    ThemeColumns.STYLE_NAME +
+                    ") VALUES (?, ?, ?, ?, ?, ?)",
+                    new Object[] { "", "", "Google", 1, "Default", "Default" } );
         }
 
         private void dropTables(SQLiteDatabase db) {
@@ -171,10 +182,12 @@ public class ThemesProvider extends ContentProvider {
             /*
              * Get a sorted cursor of all currently known themes. We'll walk
              * this cursor along with the package managers sorted output to
-             * determine changes.
+             * determine changes. This cursor intentionally excludes the
+             * "special" case system default theme (which has THEME_PACKAGE set
+             * to NULL).
              */
             Cursor current = mDb.query(TABLE_NAME,
-                    null, null, null, null, null,
+                    null, "LENGTH(" + ThemeColumns.THEME_PACKAGE + ") > 0", null, null, null,
                     ThemeColumns.THEME_PACKAGE + ", " + ThemeColumns.THEME_ID);
             ThemeItem currentItem = ThemeItem.getInstance(current);
 
@@ -501,8 +514,7 @@ public class ThemesProvider extends ContentProvider {
             if (sortOrder == null) {
                 sortOrder = ThemeColumns.NAME;
             }
-        }
-        if (type == TYPE_THEME) {
+        } else if (type == TYPE_THEME) {
             List<String> segments = uri.getPathSegments();
             int n = segments.size();
             if (n == 3) {
@@ -516,6 +528,12 @@ public class ThemesProvider extends ContentProvider {
             } else {
                 throw new IllegalArgumentException("Can't parse URI: " + uri);
             }
+        } else if (type == TYPE_THEME_SYSTEM) {
+            selection = DatabaseUtilities.appendSelection(selection,
+                    ThemeColumns.THEME_PACKAGE + " = ? AND " +
+                    ThemeColumns.THEME_ID + " = ?");
+            selectionArgs = DatabaseUtilities.appendSelectionArgs(selectionArgs,
+                    "", "");
         }
         return db.query(TABLE_NAME, projection, selection, selectionArgs, null, null,
                 sortOrder);
@@ -530,6 +548,7 @@ public class ThemesProvider extends ContentProvider {
         switch (type) {
             case TYPE_THEMES:
             case TYPE_THEME:
+            case TYPE_THEME_SYSTEM:
                 c = queryThemes(type, uri, db, projection, selection, selectionArgs, sortOrder);
                 break;
             default:
@@ -548,6 +567,7 @@ public class ThemesProvider extends ContentProvider {
             case TYPE_THEMES:
                 return ThemeColumns.CONTENT_TYPE;
             case TYPE_THEME:
+            case TYPE_THEME_SYSTEM:
                 return ThemeColumns.CONTENT_ITEM_TYPE;
             default:
                 throw new IllegalArgumentException("Unknown URI: " + uri);
@@ -671,6 +691,7 @@ public class ThemesProvider extends ContentProvider {
 
     static {
         URI_MATCHER.addURI(Themes.AUTHORITY, "themes", TYPE_THEMES);
+        URI_MATCHER.addURI(Themes.AUTHORITY, "theme/system", TYPE_THEME_SYSTEM);
         URI_MATCHER.addURI(Themes.AUTHORITY, "theme/*/*", TYPE_THEME);
     }
 }
