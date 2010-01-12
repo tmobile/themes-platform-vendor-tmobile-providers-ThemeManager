@@ -245,6 +245,9 @@ public class ThemesProvider extends ContentProvider {
             PackageInfo pi, Cursor current, ThemeItem currentItem, CustomTheme appliedTheme) {
         boolean notifyChanges = false;
 
+        if (pi.themeInfos == null)
+            return false;
+
         Arrays.sort(pi.themeInfos, new Comparator<ThemeInfo>() {
             public int compare(ThemeInfo a, ThemeInfo b) {
                 return a.themeId.compareTo(b.themeId);
