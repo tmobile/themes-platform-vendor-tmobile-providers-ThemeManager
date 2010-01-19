@@ -1,5 +1,8 @@
 package com.tmobile.thememanager.provider;
 
+import com.tmobile.themes.provider.ThemeItem;
+import com.tmobile.themes.provider.Themes;
+
 import android.test.AndroidTestCase;
 
 public class ThemeItemTest extends AndroidTestCase {

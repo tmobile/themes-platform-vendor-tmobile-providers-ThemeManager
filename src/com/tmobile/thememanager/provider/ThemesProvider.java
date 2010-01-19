@@ -1,10 +1,12 @@
 package com.tmobile.thememanager.provider;
 
-import com.tmobile.thememanager.ThemeManager;
-import com.tmobile.thememanager.provider.Themes.ThemeColumns;
+import com.tmobile.thememanager.Constants;
 import com.tmobile.thememanager.utils.DatabaseUtilities;
 import com.tmobile.thememanager.utils.FileUtilities;
 import com.tmobile.thememanager.utils.ThemeUtilities;
+import com.tmobile.themes.provider.ThemeItem;
+import com.tmobile.themes.provider.Themes;
+import com.tmobile.themes.provider.Themes.ThemeColumns;
 
 import android.content.BroadcastReceiver;
 import android.content.ContentProvider;
@@ -153,7 +155,7 @@ public class ThemesProvider extends ContentProvider {
 
             long start;
 
-            if (ThemeManager.DEBUG) {
+            if (Constants.DEBUG) {
                 start = System.currentTimeMillis();
             }
 
@@ -165,8 +167,8 @@ public class ThemesProvider extends ContentProvider {
             } finally {
                 db.endTransaction();
 
-                if (ThemeManager.DEBUG) {
-                    Log.i(ThemeManager.TAG, "VerifyInstalledThemesThread took " +
+                if (Constants.DEBUG) {
+                    Log.i(Constants.TAG, "VerifyInstalledThemesThread took " +
                             (System.currentTimeMillis() - start) + " ms.");
                 }
             }
@@ -378,8 +380,8 @@ public class ThemesProvider extends ContentProvider {
     }
 
     private static void deleteTheme(SQLiteDatabase db, ThemeItem item) {
-        if (ThemeManager.DEBUG) {
-            Log.i(ThemeManager.TAG, "ThemesProvider out of sync: removing " +
+        if (Constants.DEBUG) {
+            Log.i(Constants.TAG, "ThemesProvider out of sync: removing " +
                     item.getPackageName() + "/" + item.getThemeId());
         }
         db.delete(TABLE_NAME,
@@ -388,8 +390,8 @@ public class ThemesProvider extends ContentProvider {
 
     private static void insertTheme(Context context, SQLiteDatabase db,
             PackageInfo pi, ThemeInfo ti, boolean isCurrentTheme) {
-        if (ThemeManager.DEBUG) {
-            Log.i(ThemeManager.TAG, "ThemesProvider out of sync: inserting " +
+        if (Constants.DEBUG) {
+            Log.i(Constants.TAG, "ThemesProvider out of sync: inserting " +
                     pi.packageName + "/" + ti.themeId);
         }
 
@@ -413,8 +415,8 @@ public class ThemesProvider extends ContentProvider {
         invalidated = !equalContentValuesAndCursor(values, existing.getCursor());
 
         if (invalidated) {
-            if (ThemeManager.DEBUG) {
-                Log.i(ThemeManager.TAG, "ThemesProvider out of sync: updating " +
+            if (Constants.DEBUG) {
+                Log.i(Constants.TAG, "ThemesProvider out of sync: updating " +
                         existing.getPackageName() + "/" + existing.getThemeId());
             }
 
@@ -469,8 +471,8 @@ public class ThemesProvider extends ContentProvider {
             try {
                 if (isReplacing) {
                     if (action.equals(Intent.ACTION_PACKAGE_ADDED)) {
-                        if (ThemeManager.DEBUG) {
-                            Log.i(ThemeManager.TAG, "Handling replaced theme package: " + pkg);
+                        if (Constants.DEBUG) {
+                            Log.i(Constants.TAG, "Handling replaced theme package: " + pkg);
                         }
                         PackageInfo pi = context.getPackageManager().getPackageInfo(pkg, 0);
                         Cursor cursor = db.query(TABLE_NAME, null,
@@ -485,8 +487,8 @@ public class ThemesProvider extends ContentProvider {
                         }
                     }
                 } else if (action.equals(Intent.ACTION_PACKAGE_ADDED)) {
-                    if (ThemeManager.DEBUG) {
-                        Log.i(ThemeManager.TAG, "Handling new theme package: " + pkg);
+                    if (Constants.DEBUG) {
+                        Log.i(Constants.TAG, "Handling new theme package: " + pkg);
                     }
                     PackageInfo pi = context.getPackageManager().getPackageInfo(pkg, 0);
                     if (pi != null && pi.themeInfos != null) {
@@ -496,16 +498,16 @@ public class ThemesProvider extends ContentProvider {
                     }
                     notifyChanges();
                 } else if (action.equals(Intent.ACTION_PACKAGE_REMOVED)) {
-                    if (ThemeManager.DEBUG) {
-                        Log.i(ThemeManager.TAG, "Handling removed theme package: " + pkg);
+                    if (Constants.DEBUG) {
+                        Log.i(Constants.TAG, "Handling removed theme package: " + pkg);
                     }
                     db.delete(TABLE_NAME, ThemeColumns.THEME_PACKAGE + " = ?",
                             new String[] { pkg });
                     notifyChanges();
                 }
             } catch (NameNotFoundException e) {
-                if (ThemeManager.DEBUG) {
-                    Log.d(ThemeManager.TAG, "Unexpected package manager inconsistency detected", e);
+                if (Constants.DEBUG) {
+                    Log.d(Constants.TAG, "Unexpected package manager inconsistency detected", e);
                 }
             }
         }

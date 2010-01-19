@@ -1,6 +1,6 @@
 package com.tmobile.thememanager.receiver;
 
-import com.tmobile.thememanager.ThemeManager;
+import com.tmobile.thememanager.Constants;
 
 import android.os.Process;
 import android.util.Log;
@@ -35,7 +35,7 @@ public class ReceiverExecutor {
 
     /**
      * Call through to the underlying ThreadPoolExecutor to schedule a new
-     * command. If {@link ThemeManager#DEBUG} is true, wall timings will be
+     * command. If {@link Constants#DEBUG} is true, wall timings will be
      * inserted to measure job performance.
      */
     public static void execute(String commandName, Runnable command) {
@@ -63,13 +63,13 @@ public class ReceiverExecutor {
             Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
 
             long startTime = 0;
-            if (ThemeManager.DEBUG && mCommandName != null) {
+            if (Constants.DEBUG && mCommandName != null) {
                 startTime = System.currentTimeMillis();
             }
             try {
                 mRunnable.run();
             } finally {
-                if (ThemeManager.DEBUG && mCommandName != null) {
+                if (Constants.DEBUG && mCommandName != null) {
                     long elapsed = System.currentTimeMillis() - startTime;
                     Log.d(TAG, mCommandName + " took " + elapsed + " ms");
                 }

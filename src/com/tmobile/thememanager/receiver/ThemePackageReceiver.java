@@ -1,6 +1,6 @@
 package com.tmobile.thememanager.receiver;
 
-import com.tmobile.thememanager.ThemeManager;
+import com.tmobile.thememanager.Constants;
 import com.tmobile.thememanager.utils.ThemeUtilities;
 
 import android.content.BroadcastReceiver;
@@ -33,15 +33,15 @@ public class ThemePackageReceiver extends BroadcastReceiver {
                     /* Switch us back to teh system default. */
                     CustomTheme defaultTheme = CustomTheme.getDefault();
                     if (pkg.equals(defaultTheme.getThemePackageName())) {
-                        Log.e(ThemeManager.TAG, "Removed the system default theme?  This should not happen.");
+                        Log.e(Constants.TAG, "Removed the system default theme?  This should not happen.");
                     } else {
                         ThemeUtilities.updateConfiguration(context, defaultTheme);
                     }
                 }
             }
         } catch (NameNotFoundException e) {
-            if (ThemeManager.DEBUG) {
-                Log.e(ThemeManager.TAG, "Unable to process intent=" + intent, e);
+            if (Constants.DEBUG) {
+                Log.e(Constants.TAG, "Unable to process intent=" + intent, e);
             }
         }
     }

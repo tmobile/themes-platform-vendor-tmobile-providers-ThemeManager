@@ -1,6 +1,6 @@
 package com.tmobile.thememanager.provider;
 
-import com.tmobile.thememanager.ThemeManager;
+import com.tmobile.thememanager.Constants;
 
 import android.app.ActivityManager;
 import android.content.ContentProvider;
@@ -114,8 +114,8 @@ public class PackageResourcesProvider extends ContentProvider {
          * Specifically, openFile is called directly instead of openAssetFile,
          * with no logic in place to wrap the AssetFileDescriptor returned.
          */
-        if (ThemeManager.DEBUG) {
-            Log.d(ThemeManager.TAG, "openFile called in place of openAssetFile!");
+        if (Constants.DEBUG) {
+            Log.d(Constants.TAG, "openFile called in place of openAssetFile!");
         }
         AssetFileDescriptor afd = openAssetFile(uri, mode);
         if (afd == null) {

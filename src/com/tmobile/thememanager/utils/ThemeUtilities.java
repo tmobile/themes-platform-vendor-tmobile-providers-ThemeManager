@@ -1,12 +1,13 @@
 package com.tmobile.thememanager.utils;
 
 import com.tmobile.profilemanager.Rosie;
-import com.tmobile.profilemanager.provider.ProfileItem;
-import com.tmobile.profilemanager.provider.Profiles;
-import com.tmobile.thememanager.ThemeManager;
-import com.tmobile.thememanager.provider.ThemeItem;
-import com.tmobile.thememanager.provider.Themes;
-import com.tmobile.thememanager.provider.Themes.ThemeColumns;
+import com.tmobile.thememanager.Constants;
+import com.tmobile.themes.ThemeManager;
+import com.tmobile.themes.provider.ProfileItem;
+import com.tmobile.themes.provider.Profiles;
+import com.tmobile.themes.provider.ThemeItem;
+import com.tmobile.themes.provider.Themes;
+import com.tmobile.themes.provider.Themes.ThemeColumns;
 
 import android.app.ActivityManager;
 import android.content.Context;
@@ -91,8 +92,8 @@ public class ThemeUtilities {
             notificationRingtoneUri = (Uri)request.getParcelableExtra(ThemeManager.EXTRA_NOTIFICATION_RINGTONE_URI);
         }
 
-        if (ThemeManager.DEBUG) {
-            Log.i(ThemeManager.TAG, "applyTheme: theme=" + theme.getUri(context) +
+        if (Constants.DEBUG) {
+            Log.i(Constants.TAG, "applyTheme: theme=" + theme.getUri(context) +
                     ", wallpaperUri=" + wallpaperUri +
                     ", lockWallpaperUri=" + lockWallpaperUri +
                     ", ringtoneUri=" + ringtoneUri +
@@ -167,7 +168,7 @@ public class ThemeUtilities {
                 IOUtilities.close(in);
             }
         } catch (Exception e) {
-            Log.e(ThemeManager.TAG, "Could not set wallpaper", e);
+            Log.e(Constants.TAG, "Could not set wallpaper", e);
         }
     }
 
@@ -203,10 +204,10 @@ public class ThemeUtilities {
                 if (tmpFile.renameTo(dstFile)) {
                     context.sendBroadcast(new Intent(Rosie.ACTION_LOCK_WALLPAPER_CHANGED));
                 } else {
-                    Log.w(ThemeManager.TAG, "Unable to write to lock screen wallpaper at " + dstFile);
+                    Log.w(Constants.TAG, "Unable to write to lock screen wallpaper at " + dstFile);
                 }
             } catch (IOException e) {
-                Log.w(ThemeManager.TAG, "Unable to store lock screen wallpaper: " + e);
+                Log.w(Constants.TAG, "Unable to store lock screen wallpaper: " + e);
             } finally {
                 if (in != null) {
                     IOUtilities.close(in);

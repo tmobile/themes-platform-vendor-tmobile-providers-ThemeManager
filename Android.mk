@@ -4,12 +4,11 @@ include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := user eng
 
 LOCAL_SRC_FILES := $(call all-java-files-under, src) \
-	../ProfileManager/src/com/tmobile/profilemanager/Rosie.java \
-	../ProfileManager/src/com/tmobile/profilemanager/ProfileManager.java \
-	../ProfileManager/src/com/tmobile/profilemanager/provider/ProfileItem.java \
-	../ProfileManager/src/com/tmobile/profilemanager/provider/Profiles.java
+	../ProfileManager/src/com/tmobile/profilemanager/Rosie.java
 
 LOCAL_PACKAGE_NAME := ThemeManager
+
+LOCAL_STATIC_JAVA_LIBRARIES := com.tmobile.themes
 
 # Also link against our own custom library.
 LOCAL_JAVA_LIBRARIES := com.tmobile.widget \
