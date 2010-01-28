@@ -2,6 +2,7 @@ package com.tmobile.thememanager.utils;
 
 import com.tmobile.profilemanager.Rosie;
 import com.tmobile.thememanager.Constants;
+import com.tmobile.themes.ProfileManager;
 import com.tmobile.themes.ThemeManager;
 import com.tmobile.themes.provider.ProfileItem;
 import com.tmobile.themes.provider.Profiles;
@@ -115,22 +116,23 @@ public class ThemeUtilities {
                 setLockWallpaper(context, lockWallpaperUri);
             }
         }
-
-        if (ringtoneUri == null) {
+        
+        /* Check for silent uri */
+        if (ProfileManager.SILENT_RINGTONE_URI.equals(ringtoneUri)){
+            ringtoneUri = null;
+        } else if (ringtoneUri == null) {
             ringtoneUri = theme.getRingtoneUri(context);
         }
-        if (ringtoneUri != null) {
-            RingtoneManager.setActualDefaultRingtoneUri(context, RingtoneManager.TYPE_RINGTONE,
+        RingtoneManager.setActualDefaultRingtoneUri(context, RingtoneManager.TYPE_RINGTONE,
                     ringtoneUri);
-        }
 
-        if (notificationRingtoneUri == null) {
+        if (ProfileManager.SILENT_RINGTONE_URI.equals(notificationRingtoneUri)){
+            notificationRingtoneUri = null;
+        } else if (notificationRingtoneUri == null) {
             notificationRingtoneUri = theme.getNotificationRingtoneUri(context);
         }
-        if (notificationRingtoneUri != null) {
-            RingtoneManager.setActualDefaultRingtoneUri(context, RingtoneManager.TYPE_NOTIFICATION,
-                    ringtoneUri);
-        }
+        RingtoneManager.setActualDefaultRingtoneUri(context, RingtoneManager.TYPE_NOTIFICATION,
+                notificationRingtoneUri);
 
         applyStyleInternal(context, theme);
 
