@@ -116,15 +116,15 @@ public class ThemeUtilities {
                 setLockWallpaper(context, lockWallpaperUri);
             }
         }
-        
-        /* Check for silent uri */
-        if (ProfileManager.SILENT_RINGTONE_URI.equals(ringtoneUri)){
-            ringtoneUri = null;
-        } else if (ringtoneUri == null) {
+
+        if (ringtoneUri == null) {
             ringtoneUri = theme.getRingtoneUri(context);
         }
-        RingtoneManager.setActualDefaultRingtoneUri(context, RingtoneManager.TYPE_RINGTONE,
-                    ringtoneUri);
+        if (ringtoneUri != null) {
+            /* Check for special silent uri */
+            RingtoneManager.setActualDefaultRingtoneUri(context, RingtoneManager.TYPE_RINGTONE,
+                    ProfileManager.SILENT_RINGTONE_URI.equals(ringtoneUri) ? null : ringtoneUri);
+        }
 
         if (ProfileManager.SILENT_RINGTONE_URI.equals(notificationRingtoneUri)){
             notificationRingtoneUri = null;
