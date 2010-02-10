@@ -126,13 +126,15 @@ public class ThemeUtilities {
                     ProfileManager.SILENT_RINGTONE_URI.equals(ringtoneUri) ? null : ringtoneUri);
         }
 
-        if (ProfileManager.SILENT_RINGTONE_URI.equals(notificationRingtoneUri)){
-            notificationRingtoneUri = null;
-        } else if (notificationRingtoneUri == null) {
+        if (notificationRingtoneUri == null) {
             notificationRingtoneUri = theme.getNotificationRingtoneUri(context);
         }
-        RingtoneManager.setActualDefaultRingtoneUri(context, RingtoneManager.TYPE_NOTIFICATION,
-                notificationRingtoneUri);
+        if (notificationRingtoneUri != null) {
+            /* Check for special silent uri */
+            RingtoneManager.setActualDefaultRingtoneUri(context, RingtoneManager.TYPE_NOTIFICATION,
+                    ProfileManager.SILENT_RINGTONE_URI.equals(notificationRingtoneUri) ? null :
+                            notificationRingtoneUri);
+        }
 
         applyStyleInternal(context, theme);
 
