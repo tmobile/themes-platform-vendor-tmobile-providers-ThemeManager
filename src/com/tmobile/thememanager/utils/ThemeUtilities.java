@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 public class ThemeUtilities {
     /**
@@ -176,14 +177,18 @@ public class ThemeUtilities {
         }
     }
 
-    private static String getLockWallpaperPath(Context context) {
+    private static File getDefaultLockWallpaperPath() {
+        return new File("/data/misc/lockscreen/D_lock_screen_port");
+    }
+
+    private static File getLockWallpaperPath(Context context) {
         ProfileItem item = ProfileItem.getInstance(Profiles.getActiveProfile(context));
         try {
             String basePath = "/data/misc/lockscreen/lock_screen_port";
             if (item != null) {
-                return basePath + '_' + item.getSceneId();
+                return new File(basePath + '_' + item.getSceneId());
             } else {
-                return basePath;
+                return new File(basePath);
             }
         } finally {
             if (item != null) {
@@ -192,35 +197,69 @@ public class ThemeUtilities {
         }
     }
 
+    /**
+     * Write a single input stream to multiple outputs.
+     */
+    private static void connectIOMultiple(InputStream in, OutputStream out1, OutputStream out2)
+            throws IOException {
+        byte[] buf = new byte[4096];
+        int n;
+        while ((n = in.read(buf)) >= 0) {
+            out1.write(buf, 0, n);
+            out2.write(buf, 0, n);
+        }
+    }
+
+    /**
+     * Sets an HTC lockscreen. This function must write the lockscreen file to
+     * both /data/misc/lockscreen/D_lock_screen_port as well as
+     * /data/misc/lockscreen/lock_screen_port_[sceneId], then broadcast
+     * {@link Rosie#ACTION_LOCK_WALLPAPER_CHANGED} so the HTC component can pick
+     * up our modification. This is an extremely inefficient and poorly designed
+     * interface that HTC has dreamed up, sigh.
+     * 
+     * @note This function is not atomic. Failures can leave the wallpapers in
+     *       an inconsistent state.
+     */
     public static void setLockWallpaper(Context context, Uri uri) {
         synchronized (mLockWallpaperLock) {
             InputStream in = null;
-            FileOutputStream out = null;
-            File tmpFile = new File(context.getCacheDir(), "lock_wallpaper.tmp");
+            File tmpFileDefault = context.getFileStreamPath("D_lock_wallpaper.tmp");
+            File tmpFileWithScene = context.getFileStreamPath("lock_wallpaper_scene.tmp");
             try {
                 /* First store to a temporary location. */
                 in = context.getContentResolver().openInputStream(uri);
-                out = new FileOutputStream(tmpFile);
-                IOUtilities.connectIO(in, out);
+                FileOutputStream outDefault = context.openFileOutput(tmpFileDefault.getName(),
+                        Context.MODE_WORLD_WRITEABLE);
+                FileOutputStream outWithScene = null;
+                try {
+                    outWithScene = context.openFileOutput(tmpFileWithScene.getName(),
+                            Context.MODE_WORLD_WRITEABLE);
+                    connectIOMultiple(in, outDefault, outWithScene);
+                } finally {
+                    IOUtilities.close(outDefault);
+                    if (outWithScene != null) {
+                        IOUtilities.close(outWithScene);
+                    }
+                }
 
                 /* Then rename into place. */
-                File dstFile = new File(getLockWallpaperPath(context));
-                if (tmpFile.renameTo(dstFile)) {
-                    context.sendBroadcast(new Intent(Rosie.ACTION_LOCK_WALLPAPER_CHANGED));
-                } else {
-                    Log.w(Constants.TAG, "Unable to write to lock screen wallpaper at " + dstFile);
-                }
+                IOUtilities.renameExplodeOnFail(tmpFileDefault, getDefaultLockWallpaperPath());
+                IOUtilities.renameExplodeOnFail(tmpFileWithScene, getLockWallpaperPath(context));
+
+                /* Inform HTC's component of the change. */
+                context.sendBroadcast(new Intent(Rosie.ACTION_LOCK_WALLPAPER_CHANGED));
             } catch (IOException e) {
-                Log.w(Constants.TAG, "Unable to store lock screen wallpaper: " + e);
+                Log.w(Constants.TAG, "Unable to set lock screen wallpaper (uri=" + uri + "): " + e);
             } finally {
                 if (in != null) {
                     IOUtilities.close(in);
                 }
-                if (out != null) {
-                    IOUtilities.close(out);
+                if (tmpFileDefault.exists()) {
+                    tmpFileDefault.delete();
                 }
-                if (tmpFile.exists()) {
-                    tmpFile.delete();
+                if (tmpFileWithScene.exists()) {
+                    tmpFileWithScene.delete();
                 }
             }
         }

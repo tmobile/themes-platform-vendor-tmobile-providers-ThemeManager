@@ -1,6 +1,7 @@
 package com.tmobile.thememanager.utils;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -44,5 +45,16 @@ public class IOUtilities {
         }
 
         return total;
+    }
+
+    /**
+     * Call {@link File#renameTo(File)}, but throw an IOException on failure.
+     * 
+     * @throws IOException Thrown if the rename attempt fails.
+     */
+    public static void renameExplodeOnFail(File src, File dst) throws IOException {
+        if (!src.renameTo(dst)) {
+            throw new IOException("Unable to rename '" + src + "' to '" + dst + "'");
+        }
     }
 }
