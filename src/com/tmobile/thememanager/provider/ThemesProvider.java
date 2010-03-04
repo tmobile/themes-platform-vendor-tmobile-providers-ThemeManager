@@ -50,7 +50,7 @@ public class ThemesProvider extends ContentProvider {
 
     private static class OpenDatabaseHelper extends SQLiteOpenHelper {
         private static final String DATABASE_NAME = "theme_item.db";
-        private static final int DATABASE_VERSION = 8;
+        private static final int DATABASE_VERSION = 9;
 
         public OpenDatabaseHelper(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -101,9 +101,23 @@ public class ThemesProvider extends ContentProvider {
                     ThemeColumns.AUTHOR + ", " +
                     ThemeColumns.IS_SYSTEM + ", " +
                     ThemeColumns.NAME + ", " +
-                    ThemeColumns.STYLE_NAME +
-                    ") VALUES (?, ?, ?, ?, ?, ?)",
-                    new Object[] { "", "", "Google", 1, "Default", "Default" } );
+                    ThemeColumns.STYLE_NAME + ", " +
+                    ThemeColumns.WALLPAPER_NAME + ", " +
+                    ThemeColumns.WALLPAPER_URI + ", " +
+                    ThemeColumns.LOCK_WALLPAPER_NAME + ", " +
+                    ThemeColumns.LOCK_WALLPAPER_URI + ", " +
+                    ThemeColumns.RINGTONE_NAME + ", " +
+                    ThemeColumns.RINGTONE_URI + ", " +
+                    ThemeColumns.NOTIFICATION_RINGTONE_NAME + ", " +
+                    ThemeColumns.NOTIFICATION_RINGTONE_URI + ", " +
+                    ThemeColumns.PREVIEW_URI +
+                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    new Object[] { "", "", "Google", 1, "Default", "Default",
+                    "Default", "file:///system/customize/resource/wallpaper.jpg",
+                    "Default", "file:///system/customize/resource/htc_wallpaper_01_lockscreen.jpg",
+                    "T-Jingle", "file:///system/customize/resource/T-Jingle.ogg",
+                    "Color", "file:///system/media/audio/notifications/Color.mp3",
+                    "file:///system/customize/resource/preview.png" } );
         }
 
         private void dropTables(SQLiteDatabase db) {
