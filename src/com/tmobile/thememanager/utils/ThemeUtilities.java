@@ -177,24 +177,36 @@ public class ThemeUtilities {
         }
     }
 
-    private static File getDefaultLockWallpaperPath() {
+    public static File getDefaultLockWallpaperPath() {
         return new File("/data/misc/lockscreen/D_lock_screen_port");
     }
 
-    private static File getLockWallpaperPath(Context context) {
-        ProfileItem item = ProfileItem.getInstance(Profiles.getActiveProfile(context));
-        try {
-            String basePath = "/data/misc/lockscreen/lock_screen_port";
-            if (item != null) {
-                return new File(basePath + '_' + item.getSceneId());
-            } else {
-                return new File(basePath);
-            }
-        } finally {
-            if (item != null) {
-                item.close();
+    public static File getCurrentLockWallpaperPath() {
+        return new File("/data/misc/lockscreen/lock_screen_port");
+    }
+
+    /**
+     * We don't use this anymore. Left here in case some day HTC decides we need
+     * it again...
+     */
+    public static File getSceneLockWallpaperPath(int sceneId) {
+        return new File("/data/misc/lockscreen/lock_screen_port_" + sceneId);
+    }
+
+    /**
+     * I can't even begin to explain what's going on here because I don't
+     * understand it myself. Suffice it to say, HTC has applied very strange
+     * logic when designing the lock wallpaper code.
+     */
+    public static File getActualCurrentLockWallpaperPath() {
+        File lockWallFile = ThemeUtilities.getCurrentLockWallpaperPath();
+        if (!lockWallFile.exists()) {
+            lockWallFile = ThemeUtilities.getDefaultLockWallpaperPath();
+            if (!lockWallFile.exists()) {
+                return null;
             }
         }
+        return lockWallFile;
     }
 
     /**
@@ -213,7 +225,7 @@ public class ThemeUtilities {
     /**
      * Sets an HTC lockscreen. This function must write the lockscreen file to
      * both /data/misc/lockscreen/D_lock_screen_port as well as
-     * /data/misc/lockscreen/lock_screen_port_[sceneId], then broadcast
+     * /data/misc/lockscreen/lock_screen_port, then broadcast
      * {@link Rosie#ACTION_LOCK_WALLPAPER_CHANGED} so the HTC component can pick
      * up our modification. This is an extremely inefficient and poorly designed
      * interface that HTC has dreamed up, sigh.
@@ -225,27 +237,27 @@ public class ThemeUtilities {
         synchronized (mLockWallpaperLock) {
             InputStream in = null;
             File tmpFileDefault = context.getFileStreamPath("D_lock_wallpaper.tmp");
-            File tmpFileWithScene = context.getFileStreamPath("lock_wallpaper_scene.tmp");
+            File tmpFileCurrent = context.getFileStreamPath("lock_wallpaper.tmp");
             try {
                 /* First store to a temporary location. */
                 in = context.getContentResolver().openInputStream(uri);
                 FileOutputStream outDefault = context.openFileOutput(tmpFileDefault.getName(),
                         Context.MODE_WORLD_WRITEABLE);
-                FileOutputStream outWithScene = null;
+                FileOutputStream outCurrent = null;
                 try {
-                    outWithScene = context.openFileOutput(tmpFileWithScene.getName(),
+                    outCurrent = context.openFileOutput(tmpFileCurrent.getName(),
                             Context.MODE_WORLD_WRITEABLE);
-                    connectIOMultiple(in, outDefault, outWithScene);
+                    connectIOMultiple(in, outDefault, outCurrent);
                 } finally {
                     IOUtilities.close(outDefault);
-                    if (outWithScene != null) {
-                        IOUtilities.close(outWithScene);
+                    if (outCurrent != null) {
+                        IOUtilities.close(outCurrent);
                     }
                 }
 
                 /* Then rename into place. */
                 IOUtilities.renameExplodeOnFail(tmpFileDefault, getDefaultLockWallpaperPath());
-                IOUtilities.renameExplodeOnFail(tmpFileWithScene, getLockWallpaperPath(context));
+                IOUtilities.renameExplodeOnFail(tmpFileCurrent, getCurrentLockWallpaperPath());
 
                 /* Inform HTC's component of the change. */
                 context.sendBroadcast(new Intent(Rosie.ACTION_LOCK_WALLPAPER_CHANGED));
@@ -258,8 +270,8 @@ public class ThemeUtilities {
                 if (tmpFileDefault.exists()) {
                     tmpFileDefault.delete();
                 }
-                if (tmpFileWithScene.exists()) {
-                    tmpFileWithScene.delete();
+                if (tmpFileCurrent.exists()) {
+                    tmpFileCurrent.delete();
                 }
             }
         }
