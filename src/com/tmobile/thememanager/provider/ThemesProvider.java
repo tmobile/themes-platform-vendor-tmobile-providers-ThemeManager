@@ -52,7 +52,7 @@ public class ThemesProvider extends ContentProvider {
 
     private static class OpenDatabaseHelper extends SQLiteOpenHelper {
         private static final String DATABASE_NAME = "theme_item.db";
-        private static final int DATABASE_VERSION = 9;
+        private static final int DATABASE_VERSION = 10;
 
         private final Context mContext;
 
@@ -106,8 +106,10 @@ public class ThemesProvider extends ContentProvider {
                     ThemeColumns.LOCK_WALLPAPER_NAME + " TEXT, " +
                     ThemeColumns.LOCK_WALLPAPER_URI + " TEXT, " +
                     ThemeColumns.RINGTONE_NAME + " TEXT, " +
+                    ThemeColumns.RINGTONE_NAME_KEY + " TEXT, " +
                     ThemeColumns.RINGTONE_URI + " TEXT, " +
                     ThemeColumns.NOTIFICATION_RINGTONE_NAME + " TEXT, " +
+                    ThemeColumns.NOTIFICATION_RINGTONE_NAME_KEY + " TEXT, " +
                     ThemeColumns.NOTIFICATION_RINGTONE_URI + " TEXT, " +
                     ThemeColumns.THUMBNAIL_URI + " TEXT, " +
                     ThemeColumns.PREVIEW_URI + " TEXT" +
@@ -115,8 +117,10 @@ public class ThemesProvider extends ContentProvider {
             db.execSQL("CREATE INDEX themeitem_map_package ON themeitem_map (theme_package)");
             db.execSQL("CREATE UNIQUE INDEX themeitem_map_key ON themeitem_map (theme_package, theme_id)");
 
-            Uri ringtoneUri = getInternalRingtone("T-Jingle", Audio.Media.IS_RINGTONE);
-            Uri notificationUri = getInternalRingtone("Color", Audio.Media.IS_NOTIFICATION);
+            String ringtoneName = "T-Jingle";
+            Uri ringtoneUri = getInternalRingtone(ringtoneName, Audio.Media.IS_RINGTONE);
+            String notificationName = "Color";
+            Uri notificationUri = getInternalRingtone(notificationName, Audio.Media.IS_NOTIFICATION);
 
             db.execSQL("INSERT INTO themeitem_map (" +
                     ThemeColumns.THEME_PACKAGE + ", " +
@@ -130,16 +134,18 @@ public class ThemesProvider extends ContentProvider {
                     ThemeColumns.LOCK_WALLPAPER_NAME + ", " +
                     ThemeColumns.LOCK_WALLPAPER_URI + ", " +
                     ThemeColumns.RINGTONE_NAME + ", " +
+                    ThemeColumns.RINGTONE_NAME_KEY + ", " +
                     ThemeColumns.RINGTONE_URI + ", " +
                     ThemeColumns.NOTIFICATION_RINGTONE_NAME + ", " +
+                    ThemeColumns.NOTIFICATION_RINGTONE_NAME_KEY + ", " +
                     ThemeColumns.NOTIFICATION_RINGTONE_URI + ", " +
                     ThemeColumns.PREVIEW_URI +
-                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     new Object[] { "", "", "T-Mobile", 1, "Chill", "Chill Style",
                     "Chill", "file:///system/customize/resource/wallpaper.jpg",
                     "Chill (Lockscreen)", "file:///system/customize/resource/htc_wallpaper_01_lockscreen.jpg",
-                    "T-Jingle", ringtoneUri,
-                    "Color", notificationUri,
+                    ringtoneName, Audio.keyFor(ringtoneName), ringtoneUri,
+                    notificationName, Audio.keyFor(notificationName), notificationUri,
                     "file:///system/customize/resource/preview.png" } );
         }
 
@@ -376,12 +382,14 @@ public class ThemesProvider extends ContentProvider {
         }
         if (ti.ringtoneFileName != null) {
             outValues.put(ThemeColumns.RINGTONE_NAME, ti.ringtoneName);
+            outValues.put(ThemeColumns.RINGTONE_NAME_KEY, Audio.keyFor(ti.ringtoneName));
             outValues.put(ThemeColumns.RINGTONE_URI,
                     PackageResources.makeAssetPathUri(pi.packageName, ti.ringtoneFileName)
                         .toString());
         }
         if (ti.notificationRingtoneFileName != null) {
             outValues.put(ThemeColumns.NOTIFICATION_RINGTONE_NAME, ti.notificationRingtoneName);
+            outValues.put(ThemeColumns.NOTIFICATION_RINGTONE_NAME_KEY, Audio.keyFor(ti.notificationRingtoneName));
             outValues.put(ThemeColumns.NOTIFICATION_RINGTONE_URI,
                     PackageResources.makeAssetPathUri(pi.packageName,
                             ti.notificationRingtoneFileName).toString());
