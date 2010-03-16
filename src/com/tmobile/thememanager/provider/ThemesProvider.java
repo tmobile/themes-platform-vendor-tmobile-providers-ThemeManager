@@ -135,9 +135,9 @@ public class ThemesProvider extends ContentProvider {
                     ThemeColumns.NOTIFICATION_RINGTONE_URI + ", " +
                     ThemeColumns.PREVIEW_URI +
                     ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    new Object[] { "", "", "Google", 1, "Default", "Default",
-                    "Default", "file:///system/customize/resource/wallpaper.jpg",
-                    "Default", "file:///system/customize/resource/htc_wallpaper_01_lockscreen.jpg",
+                    new Object[] { "", "", "T-Mobile", 1, "Chill", "Chill Style",
+                    "Chill", "file:///system/customize/resource/wallpaper.jpg",
+                    "Chill (Lockscreen)", "file:///system/customize/resource/htc_wallpaper_01_lockscreen.jpg",
                     "T-Jingle", ringtoneUri,
                     "Color", notificationUri,
                     "file:///system/customize/resource/preview.png" } );
