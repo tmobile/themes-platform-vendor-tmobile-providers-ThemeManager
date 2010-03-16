@@ -1,5 +1,6 @@
 package com.tmobile.thememanager.utils;
 
+import android.database.Cursor;
 import android.text.TextUtils;
 
 public class DatabaseUtilities {
@@ -27,5 +28,23 @@ public class DatabaseUtilities {
         System.arraycopy(extra, 0, newArgs, selectionArgs.length, extra.length);
 
         return newArgs;
+    }
+
+    /**
+     * Return the first column of the first row of the supplied cursor as a
+     * long. Useful for accessing the result of a simple 1x1 query.
+     */
+    public static long cursorToResult(Cursor cursor, long defaultValue) {
+        if (cursor == null) {
+            return defaultValue;
+        }
+        try {
+            if (cursor.moveToFirst()) {
+                return cursor.getLong(0);
+            }
+        } finally {
+            cursor.close();
+        }
+        return defaultValue;
     }
 }

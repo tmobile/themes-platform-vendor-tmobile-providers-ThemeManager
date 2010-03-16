@@ -10,6 +10,7 @@ import com.tmobile.themes.provider.Themes.ThemeColumns;
 
 import android.content.BroadcastReceiver;
 import android.content.ContentProvider;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +28,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Process;
+import android.provider.MediaStore.Audio;
 import android.util.Log;
 
 import java.util.Arrays;
@@ -52,8 +54,11 @@ public class ThemesProvider extends ContentProvider {
         private static final String DATABASE_NAME = "theme_item.db";
         private static final int DATABASE_VERSION = 9;
 
+        private final Context mContext;
+
         public OpenDatabaseHelper(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
+            mContext = context;
         }
 
         /**
@@ -68,6 +73,21 @@ public class ThemesProvider extends ContentProvider {
         public void onUpgrade(final SQLiteDatabase db, int oldVer, int newVer) {
             dropTables(db);
             createTables(db);
+        }
+
+        private Uri getInternalRingtone(String title, String typeCondition) {
+            Cursor cursor = mContext.getContentResolver().query(Audio.Media.INTERNAL_CONTENT_URI,
+                    new String[] { Audio.Media._ID },
+                    Audio.Media.TITLE + " = ? AND " + typeCondition + " = 1",
+                    new String[] { title }, null);
+            long id = DatabaseUtilities.cursorToResult(cursor, -1);
+            if (id >= 0) {
+                return ContentUris.withAppendedId(Audio.Media.INTERNAL_CONTENT_URI, id);
+            } else {
+                Log.e(Constants.TAG, "Failed to retrieve default ringtone '" + title + "'" +
+                        " (" + typeCondition + ")");
+                return null;
+            }
         }
 
         private void createTables(SQLiteDatabase db) {
@@ -95,6 +115,9 @@ public class ThemesProvider extends ContentProvider {
             db.execSQL("CREATE INDEX themeitem_map_package ON themeitem_map (theme_package)");
             db.execSQL("CREATE UNIQUE INDEX themeitem_map_key ON themeitem_map (theme_package, theme_id)");
 
+            Uri ringtoneUri = getInternalRingtone("T-Jingle", Audio.Media.IS_RINGTONE);
+            Uri notificationUri = getInternalRingtone("Color", Audio.Media.IS_NOTIFICATION);
+
             db.execSQL("INSERT INTO themeitem_map (" +
                     ThemeColumns.THEME_PACKAGE + ", " +
                     ThemeColumns.THEME_ID + ", " +
@@ -115,8 +138,8 @@ public class ThemesProvider extends ContentProvider {
                     new Object[] { "", "", "Google", 1, "Default", "Default",
                     "Default", "file:///system/customize/resource/wallpaper.jpg",
                     "Default", "file:///system/customize/resource/htc_wallpaper_01_lockscreen.jpg",
-                    "T-Jingle", "file:///system/customize/resource/T-Jingle.ogg",
-                    "Color", "file:///system/media/audio/notifications/Color.mp3",
+                    "T-Jingle", ringtoneUri,
+                    "Color", notificationUri,
                     "file:///system/customize/resource/preview.png" } );
         }
 
