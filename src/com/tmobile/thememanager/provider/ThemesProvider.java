@@ -27,6 +27,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.Process;
 import android.provider.MediaStore.Audio;
 import android.util.Log;
@@ -49,6 +50,8 @@ public class ThemesProvider extends ContentProvider {
     private static final int TYPE_THEME_SYSTEM = 2;
 
     private SQLiteOpenHelper mOpenHelper;
+
+    private final Handler mHandler = new Handler();
 
     private static class OpenDatabaseHelper extends SQLiteOpenHelper {
         private static final String DATABASE_NAME = "theme_item.db";
@@ -181,7 +184,11 @@ public class ThemesProvider extends ContentProvider {
          * supported. Development invokes this feature often when restarting the
          * emulator with changes to theme packages, or by using "adb sync".
          */
-        new VerifyInstalledThemesThread().start();
+        mHandler.post(new Runnable() {
+            public void run() {
+                new VerifyInstalledThemesThread().start();
+            }
+        });
 
         return true;
     }
