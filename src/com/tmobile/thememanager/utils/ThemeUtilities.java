@@ -4,8 +4,6 @@ import com.tmobile.profilemanager.Rosie;
 import com.tmobile.thememanager.Constants;
 import com.tmobile.themes.ProfileManager;
 import com.tmobile.themes.ThemeManager;
-import com.tmobile.themes.provider.ProfileItem;
-import com.tmobile.themes.provider.Profiles;
 import com.tmobile.themes.provider.ThemeItem;
 import com.tmobile.themes.provider.Themes;
 import com.tmobile.themes.provider.Themes.ThemeColumns;
@@ -260,7 +258,9 @@ public class ThemeUtilities {
                 IOUtilities.renameExplodeOnFail(tmpFileCurrent, getCurrentLockWallpaperPath());
 
                 /* Inform HTC's component of the change. */
-                context.sendBroadcast(new Intent(Rosie.ACTION_LOCK_WALLPAPER_CHANGED));
+                Intent intent = new Intent(Rosie.ACTION_LOCK_WALLPAPER_CHANGED);
+                intent.putExtra(ThemeManager.EXTRA_LOCK_WALLPAPER_URI, uri);
+                context.sendBroadcast(intent);
             } catch (IOException e) {
                 Log.w(Constants.TAG, "Unable to set lock screen wallpaper (uri=" + uri + "): " + e);
             } finally {
