@@ -19,7 +19,7 @@ LOCAL_JAVA_LIBRARIES := com.tmobile.widget \
 # DRM-locked resources from theme APKs.
 # In order to uncomment the line below, we will need to add
 # build/target/product/security/theme_manager.pk8 and theme_manager.x509.pem files.
-# LOCAL_CERTIFICATE := theme_manager
+LOCAL_CERTIFICATE := theme_manager_htc
 
 include $(BUILD_PACKAGE)
 
