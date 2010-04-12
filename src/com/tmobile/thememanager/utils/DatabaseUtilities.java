@@ -31,16 +31,40 @@ public class DatabaseUtilities {
     }
 
     /**
+     * @deprecated Use {@link #cursorToLong(Cursor, long)}.
+     */
+    public static long cursorToResult(Cursor cursor, long defaultValue) {
+        return cursorToLong(cursor, defaultValue);
+    }
+
+    /**
      * Return the first column of the first row of the supplied cursor as a
      * long. Useful for accessing the result of a simple 1x1 query.
      */
-    public static long cursorToResult(Cursor cursor, long defaultValue) {
+    public static long cursorToLong(Cursor cursor, long defaultValue) {
         if (cursor == null) {
             return defaultValue;
         }
         try {
             if (cursor.moveToFirst()) {
                 return cursor.getLong(0);
+            }
+        } finally {
+            cursor.close();
+        }
+        return defaultValue;
+    }
+
+    /**
+     * @see #cursorToLong(Cursor, long)
+     */
+    public static boolean cursorToBoolean(Cursor cursor, boolean defaultValue) {
+        if (cursor == null) {
+            return defaultValue;
+        }
+        try {
+            if (cursor.moveToFirst()) {
+                return cursor.getInt(0) != 0;
             }
         } finally {
             cursor.close();

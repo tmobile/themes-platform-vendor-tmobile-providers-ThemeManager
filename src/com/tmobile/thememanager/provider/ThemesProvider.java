@@ -30,6 +30,7 @@ import android.os.Binder;
 import android.os.Handler;
 import android.os.Process;
 import android.provider.MediaStore.Audio;
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.util.Arrays;
@@ -48,6 +49,9 @@ public class ThemesProvider extends ContentProvider {
     private static final int TYPE_THEMES = 0;
     private static final int TYPE_THEME = 1;
     private static final int TYPE_THEME_SYSTEM = 2;
+
+    private static final String sDefaultThemeSelection =
+        "LENGTH(" + ThemeColumns.THEME_PACKAGE + ") = 0";
 
     private SQLiteOpenHelper mOpenHelper;
 
@@ -125,9 +129,15 @@ public class ThemesProvider extends ContentProvider {
             String notificationName = "Color";
             Uri notificationUri = getInternalRingtone(notificationName, Audio.Media.IS_NOTIFICATION);
 
+            /*
+             * NOTE: We set IS_APPLIED=1 optimistically here. We don't actually
+             * know or care if this theme is currently applied as we will soon
+             * start the VerifyInstalledThemesThread to make sure this is true.
+             */
             db.execSQL("INSERT INTO themeitem_map (" +
                     ThemeColumns.THEME_PACKAGE + ", " +
                     ThemeColumns.THEME_ID + ", " +
+                    ThemeColumns.IS_APPLIED + ", " +
                     ThemeColumns.AUTHOR + ", " +
                     ThemeColumns.IS_SYSTEM + ", " +
                     ThemeColumns.NAME + ", " +
@@ -143,8 +153,8 @@ public class ThemesProvider extends ContentProvider {
                     ThemeColumns.NOTIFICATION_RINGTONE_NAME_KEY + ", " +
                     ThemeColumns.NOTIFICATION_RINGTONE_URI + ", " +
                     ThemeColumns.PREVIEW_URI +
-                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    new Object[] { "", "", "T-Mobile", 1, "Nest", "Marine",
+                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    new Object[] { "", "", 1, "T-Mobile", 1, "Nest", "Marine",
                     "Nest", "file:///system/customize/resource/wallpaper.jpg",
                     "Nest (Lockscreen)", "file:///system/customize/resource/htc_wallpaper_01_lockscreen.jpg",
                     ringtoneName, Audio.keyFor(ringtoneName), ringtoneUri,
@@ -224,19 +234,64 @@ public class ThemesProvider extends ContentProvider {
             }
         }
 
+        /**
+         * Determine if the system default theme needs to be modified based on
+         * current runtime conditions, and then modify it.
+         *
+         * @param db
+         * @param appliedTheme Currently applied theme (as detected by querying
+         *            the system, not this database).
+         * @return True if the system default row changed; false otherwise.
+         */
+        private boolean detectSystemDefaultChange(SQLiteDatabase db,
+                CustomTheme appliedTheme) {
+            boolean appliedInDb = DatabaseUtilities.cursorToBoolean(db.query(TABLE_NAME,
+                    new String[] { ThemeColumns.IS_APPLIED },
+                    sDefaultThemeSelection, null, null, null, null), false);
+            boolean appliedToSystem = TextUtils.isEmpty(appliedTheme.getThemePackageName());
+            if (appliedToSystem != appliedInDb) {
+                if (Constants.DEBUG) {
+                    Log.i(Constants.TAG, "ThemesProvider out of sync: updating system default, is_applied=" + appliedToSystem);
+                }
+
+                ContentValues values = new ContentValues();
+                values.put(ThemeColumns.IS_APPLIED, appliedToSystem);
+                db.update(TABLE_NAME, values, sDefaultThemeSelection, null);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
         private void verifyPackages() {
+            CustomTheme appliedTheme = ThemeUtilities.getAppliedTheme(getContext());
+
+            /*
+             * Tracks whether any actual modifications to the database occurred.
+             * If true, we must notify content observers when the package
+             * verification phase completes.
+             */
+            boolean notifyChanges = false;
+
+            /*
+             * Handle the "default" special case outside the main loop involving
+             * actual theme packages.
+             */
+            boolean invalidatedSystemDefault = detectSystemDefaultChange(mDb, appliedTheme);
+            if (invalidatedSystemDefault) {
+                notifyChanges = true;
+            }
+
             /* List all currently installed theme packages. */
             List<PackageInfo> themePackages = getContext().getPackageManager()
                     .getInstalledThemePackages();
-
-            CustomTheme appliedTheme = ThemeUtilities.getAppliedTheme(getContext());
 
             /*
              * Get a sorted cursor of all currently known themes. We'll walk
              * this cursor along with the package managers sorted output to
              * determine changes. This cursor intentionally excludes the
              * "special" case system default theme (which has THEME_PACKAGE set
-             * to NULL).
+             * to a blank string).
              */
             Cursor current = mDb.query(TABLE_NAME,
                     null, "LENGTH(" + ThemeColumns.THEME_PACKAGE + ") > 0", null, null, null,
@@ -248,8 +303,6 @@ public class ThemesProvider extends ContentProvider {
                     return a.packageName.compareTo(b.packageName);
                 }
             });
-
-            boolean notifyChanges = false;
 
             try {
                 for (PackageInfo pi: themePackages) {
