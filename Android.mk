@@ -8,11 +8,11 @@ LOCAL_SRC_FILES := $(call all-java-files-under, src) \
 
 LOCAL_PACKAGE_NAME := ThemeManager
 
-LOCAL_STATIC_JAVA_LIBRARIES := com.tmobile.themes
+LOCAL_STATIC_JAVA_LIBRARIES := com.tmobile.themes \
+    com.tmobile.widget
 
 # Also link against our own custom library.
-LOCAL_JAVA_LIBRARIES := com.tmobile.widget \
-	com.htc.framework
+LOCAL_JAVA_LIBRARIES := com.htc.framework
 
 # Specify certificate, to be used by this package ONLY.
 # This way we guarantee that other packages won't be able to read
