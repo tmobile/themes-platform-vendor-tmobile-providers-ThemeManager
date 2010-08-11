@@ -1,6 +1,6 @@
 package com.tmobile.thememanager.utils;
 
-import com.tmobile.profilemanager.Rosie;
+import com.tmobile.profilemanager.utils.WallpaperUtilities;
 import com.tmobile.thememanager.Constants;
 import com.tmobile.themes.ProfileManager;
 import com.tmobile.themes.ThemeManager;
@@ -9,6 +9,7 @@ import com.tmobile.themes.provider.Themes;
 import com.tmobile.themes.provider.Themes.ThemeColumns;
 
 import android.app.ActivityManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -19,19 +20,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.util.Log;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
 public class ThemeUtilities {
-    /**
-     * Lock held while the temporary lock wallpaper is being written to disk.
-     * This is used to prevent a possible race condition if multiple events
-     * occur in quick succession to apply a specific theme with a lock paper.
-     */
-    private static Object mLockWallpaperLock = new Object();
 
     /**
      * Applies just the configuration portion of the theme. No wallpapers or
@@ -79,6 +68,7 @@ public class ThemeUtilities {
 
         Uri wallpaperUri = null;
         Uri lockWallpaperUri = null;
+        ComponentName liveWallPaperComponent = null;
         Uri ringtoneUri = null;
         Uri notificationRingtoneUri = null;
 
@@ -90,29 +80,35 @@ public class ThemeUtilities {
             lockWallpaperUri = (Uri)request.getParcelableExtra(ThemeManager.EXTRA_LOCK_WALLPAPER_URI);
             ringtoneUri = (Uri)request.getParcelableExtra(ThemeManager.EXTRA_RINGTONE_URI);
             notificationRingtoneUri = (Uri)request.getParcelableExtra(ThemeManager.EXTRA_NOTIFICATION_RINGTONE_URI);
+            liveWallPaperComponent = (ComponentName)request.getParcelableExtra(ThemeManager.EXTRA_LIVE_WALLPAPER_COMPONENT);
         }
 
         if (Constants.DEBUG) {
             Log.i(Constants.TAG, "applyTheme: theme=" + theme.getUri(context) +
                     ", wallpaperUri=" + wallpaperUri +
                     ", lockWallpaperUri=" + lockWallpaperUri +
+                    ", liveWallPaperComponent=" + liveWallPaperComponent +
                     ", ringtoneUri=" + ringtoneUri +
                     ", notificationRingtoneUri=" + notificationRingtoneUri);
         }
 
-        if (wallpaperUri == null) {
-            wallpaperUri = theme.getWallpaperUri(context);
-        }
-        if (wallpaperUri != null) {
-            setWallpaper(context, wallpaperUri);
-        }
-
-        if (!dontSetLockWallpaper) {
-            if (lockWallpaperUri == null) {
-                lockWallpaperUri = theme.getLockWallpaperUri(context);
+        if (liveWallPaperComponent != null) {
+            WallpaperUtilities.setLiveWallpaper(context, liveWallPaperComponent);
+        } else {
+            if (wallpaperUri == null) {
+                wallpaperUri = theme.getWallpaperUri(context);
             }
-            if (lockWallpaperUri != null) {
-                setLockWallpaper(context, lockWallpaperUri);
+            if (wallpaperUri != null) {
+                WallpaperUtilities.setWallpaper(context, wallpaperUri);
+            }
+
+            if (!dontSetLockWallpaper) {
+                if (lockWallpaperUri == null) {
+                    lockWallpaperUri = theme.getLockWallpaperUri(context);
+                }
+                if (lockWallpaperUri != null) {
+                    WallpaperUtilities.setLockWallpaper(context, lockWallpaperUri);
+                }
             }
         }
 
@@ -160,121 +156,6 @@ public class ThemeUtilities {
 
         currentConfig.customTheme = new CustomTheme(themeId, packageName);
         am.updateConfiguration(currentConfig);
-    }
-
-    private static void setWallpaper(Context context, Uri uri) {
-        try {
-            InputStream in = context.getContentResolver().openInputStream(uri);
-            try {
-                context.setWallpaper(in);
-            } finally {
-                IOUtilities.close(in);
-            }
-        } catch (Exception e) {
-            Log.e(Constants.TAG, "Could not set wallpaper", e);
-        }
-    }
-
-    public static File getDefaultLockWallpaperPath() {
-        return new File("/data/misc/lockscreen/D_lock_screen_port");
-    }
-
-    public static File getCurrentLockWallpaperPath() {
-        return new File("/data/misc/lockscreen/lock_screen_port");
-    }
-
-    /**
-     * We don't use this anymore. Left here in case some day HTC decides we need
-     * it again...
-     */
-    public static File getSceneLockWallpaperPath(int sceneId) {
-        return new File("/data/misc/lockscreen/lock_screen_port_" + sceneId);
-    }
-
-    /**
-     * I can't even begin to explain what's going on here because I don't
-     * understand it myself. Suffice it to say, HTC has applied very strange
-     * logic when designing the lock wallpaper code.
-     */
-    public static File getActualCurrentLockWallpaperPath() {
-        File lockWallFile = ThemeUtilities.getCurrentLockWallpaperPath();
-        if (!lockWallFile.exists()) {
-            lockWallFile = ThemeUtilities.getDefaultLockWallpaperPath();
-            if (!lockWallFile.exists()) {
-                return null;
-            }
-        }
-        return lockWallFile;
-    }
-
-    /**
-     * Write a single input stream to multiple outputs.
-     */
-    private static void connectIOMultiple(InputStream in, OutputStream out1, OutputStream out2)
-            throws IOException {
-        byte[] buf = new byte[4096];
-        int n;
-        while ((n = in.read(buf)) >= 0) {
-            out1.write(buf, 0, n);
-            out2.write(buf, 0, n);
-        }
-    }
-
-    /**
-     * Sets an HTC lockscreen. This function must write the lockscreen file to
-     * both /data/misc/lockscreen/D_lock_screen_port as well as
-     * /data/misc/lockscreen/lock_screen_port, then broadcast
-     * {@link Rosie#ACTION_LOCK_WALLPAPER_CHANGED} so the HTC component can pick
-     * up our modification. This is an extremely inefficient and poorly designed
-     * interface that HTC has dreamed up, sigh.
-     * 
-     * @note This function is not atomic. Failures can leave the wallpapers in
-     *       an inconsistent state.
-     */
-    public static void setLockWallpaper(Context context, Uri uri) {
-        synchronized (mLockWallpaperLock) {
-            InputStream in = null;
-            File tmpFileDefault = context.getFileStreamPath("D_lock_wallpaper.tmp");
-            File tmpFileCurrent = context.getFileStreamPath("lock_wallpaper.tmp");
-            try {
-                /* First store to a temporary location. */
-                in = context.getContentResolver().openInputStream(uri);
-                FileOutputStream outDefault = context.openFileOutput(tmpFileDefault.getName(),
-                        Context.MODE_WORLD_WRITEABLE);
-                FileOutputStream outCurrent = null;
-                try {
-                    outCurrent = context.openFileOutput(tmpFileCurrent.getName(),
-                            Context.MODE_WORLD_WRITEABLE);
-                    connectIOMultiple(in, outDefault, outCurrent);
-                } finally {
-                    IOUtilities.close(outDefault);
-                    if (outCurrent != null) {
-                        IOUtilities.close(outCurrent);
-                    }
-                }
-
-                /* Then rename into place. */
-                IOUtilities.renameExplodeOnFail(tmpFileDefault, getDefaultLockWallpaperPath());
-                IOUtilities.renameExplodeOnFail(tmpFileCurrent, getCurrentLockWallpaperPath());
-
-                /* Inform HTC's component of the change. */
-                Intent intent = new Intent(Rosie.ACTION_LOCK_WALLPAPER_CHANGED);
-                intent.putExtra(ThemeManager.EXTRA_LOCK_WALLPAPER_URI, uri);
-                context.sendBroadcast(intent);
-            } catch (IOException e) {
-                Log.w(Constants.TAG, "Unable to set lock screen wallpaper (uri=" + uri + "): " + e);
-            } finally {
-                if (in != null) {
-                    IOUtilities.close(in);
-                }
-                if (tmpFileDefault.exists()) {
-                    tmpFileDefault.delete();
-                }
-                if (tmpFileCurrent.exists()) {
-                    tmpFileCurrent.delete();
-                }
-            }
-        }
     }
 
     public static CustomTheme getAppliedTheme(Context context) {
