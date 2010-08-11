@@ -24,6 +24,7 @@
 
     <!-- Necessary to apply a theme. -->
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER_COMPONENT" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <uses-permission android:name="android.permission.CHANGE_CONFIGURATION" />
 
