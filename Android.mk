@@ -4,7 +4,8 @@ include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := user eng
 
 LOCAL_SRC_FILES := $(call all-java-files-under, src) \
-	../ProfileManager/src/com/tmobile/profilemanager/Rosie.java
+	../ProfileManager/src/com/tmobile/profilemanager/Rosie.java \
+	../ProfileManager/src/com/tmobile/profilemanager/utils/WallpaperUtilities.java
 
 LOCAL_PACKAGE_NAME := ThemeManager
 
