@@ -3,7 +3,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:pluto="http://www.w3.org/2001/pluto.html"
     android:sharedUserId="com.tmobile.thememanager"
-    package="com.tmobile.thememanager">
+    package="com.tmobile.thememanager"
+    android:versionCode="2"
+    android:versionName="2.0.1">
 
     <!-- Allows windowless application of themes. -->
     <permission android:name="com.tmobile.permission.CHANGE_THEME"
