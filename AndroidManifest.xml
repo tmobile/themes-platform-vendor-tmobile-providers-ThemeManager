@@ -4,8 +4,8 @@
     xmlns:pluto="http://www.w3.org/2001/pluto.html"
     android:sharedUserId="com.tmobile.thememanager"
     package="com.tmobile.thememanager"
-    android:versionCode="5"
-    android:versionName="2.0.4">
+    android:versionCode="6"
+    android:versionName="2.0.5">
 
     <!-- Allows windowless application of themes. -->
     <permission android:name="com.tmobile.permission.CHANGE_THEME"
