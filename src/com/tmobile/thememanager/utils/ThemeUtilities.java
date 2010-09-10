@@ -101,14 +101,13 @@ public class ThemeUtilities {
             if (wallpaperUri != null) {
                 WallpaperUtilities.setWallpaper(context, wallpaperUri);
             }
-
-            if (!dontSetLockWallpaper) {
-                if (lockWallpaperUri == null) {
-                    lockWallpaperUri = theme.getLockWallpaperUri(context);
-                }
-                if (lockWallpaperUri != null) {
-                    WallpaperUtilities.setLockWallpaper(context, lockWallpaperUri);
-                }
+        }
+        if (!dontSetLockWallpaper) {
+            if (lockWallpaperUri == null) {
+                lockWallpaperUri = theme.getLockWallpaperUri(context);
+            }
+            if (lockWallpaperUri != null) {
+                WallpaperUtilities.setLockWallpaper(context, lockWallpaperUri);
             }
         }
 
