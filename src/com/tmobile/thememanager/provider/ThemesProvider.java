@@ -59,7 +59,7 @@ public class ThemesProvider extends ContentProvider {
 
     private static class OpenDatabaseHelper extends SQLiteOpenHelper {
         private static final String DATABASE_NAME = "theme_item.db";
-        private static final int DATABASE_VERSION = 10;
+        private static final int DATABASE_VERSION = 11;
 
         private final Context mContext;
 
@@ -154,9 +154,9 @@ public class ThemesProvider extends ContentProvider {
                     ThemeColumns.NOTIFICATION_RINGTONE_URI + ", " +
                     ThemeColumns.PREVIEW_URI +
                     ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    new Object[] { "", "", 1, "T-Mobile", 1, "Nest", "Marine",
-                    "Nest", "file:///system/customize/resource/wallpaper.jpg",
-                    "Nest (Lockscreen)", "file:///system/customize/resource/htc_wallpaper_01_lockscreen.jpg",
+                    new Object[] { "", "", 1, "T-Mobile", 1, "Safari", "Onyx",
+                    "Safari", "file:///system/customize/resource/wallpaper.jpg",
+                    "Safari (Lockscreen)", "file:///system/customize/resource/htc_wallpaper_01_lockscreen.jpg",
                     ringtoneName, Audio.keyFor(ringtoneName), ringtoneUri,
                     notificationName, Audio.keyFor(notificationName), notificationUri,
                     "file:///system/customize/resource/preview.png" } );
