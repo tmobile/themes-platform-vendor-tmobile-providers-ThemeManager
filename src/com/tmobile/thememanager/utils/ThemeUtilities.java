@@ -1,6 +1,5 @@
 package com.tmobile.thememanager.utils;
 
-import com.tmobile.profilemanager.utils.WallpaperUtilities;
 import com.tmobile.thememanager.Constants;
 import com.tmobile.themes.ProfileManager;
 import com.tmobile.themes.ThemeManager;
@@ -107,7 +106,9 @@ public class ThemeUtilities {
                 lockWallpaperUri = theme.getLockWallpaperUri(context);
             }
             if (lockWallpaperUri != null) {
-                WallpaperUtilities.setLockWallpaper(context, lockWallpaperUri);
+                if (WallpaperUtilities.supportsLockWallpaper(context)) {
+                    WallpaperUtilities.setLockWallpaper(context, lockWallpaperUri);
+                }
             }
         }
 
