@@ -40,7 +40,9 @@ public class WallpaperUtilities {
         } catch (Exception e) {
             Log.w(TAG, "Could not set wallpaper", e);
         } finally {
-            IOUtilities.close(in);
+            if (in != null) {
+                IOUtilities.close(in);
+            }
         }
     }
 
@@ -85,7 +87,9 @@ public class WallpaperUtilities {
                     throw new RuntimeException(e);
                 }
             } finally {
-                IOUtilities.close(in);
+                if (in != null) {
+                    IOUtilities.close(in);
+                }
             }
         }
     }
