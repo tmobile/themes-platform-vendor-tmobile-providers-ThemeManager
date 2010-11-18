@@ -1,7 +1,6 @@
 package com.tmobile.thememanager.utils;
 
 import com.tmobile.thememanager.Constants;
-import com.tmobile.themes.ProfileManager;
 import com.tmobile.themes.ThemeManager;
 import com.tmobile.themes.provider.ThemeItem;
 import com.tmobile.themes.provider.Themes;
@@ -118,7 +117,7 @@ public class ThemeUtilities {
         if (ringtoneUri != null) {
             /* Check for special silent uri */
             RingtoneManager.setActualDefaultRingtoneUri(context, RingtoneManager.TYPE_RINGTONE,
-                    ProfileManager.SILENT_RINGTONE_URI.equals(ringtoneUri) ? null : ringtoneUri);
+                    ThemeManager.SILENT_RINGTONE_URI.equals(ringtoneUri) ? null : ringtoneUri);
         }
 
         if (notificationRingtoneUri == null) {
@@ -127,7 +126,7 @@ public class ThemeUtilities {
         if (notificationRingtoneUri != null) {
             /* Check for special silent uri */
             RingtoneManager.setActualDefaultRingtoneUri(context, RingtoneManager.TYPE_NOTIFICATION,
-                    ProfileManager.SILENT_RINGTONE_URI.equals(notificationRingtoneUri) ? null :
+                    ThemeManager.SILENT_RINGTONE_URI.equals(notificationRingtoneUri) ? null :
                             notificationRingtoneUri);
         }
 
