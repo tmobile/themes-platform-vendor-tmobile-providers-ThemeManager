@@ -17,6 +17,7 @@
 package com.tmobile.thememanager.provider;
 
 import com.tmobile.thememanager.Constants;
+import com.tmobile.thememanager.R;
 import com.tmobile.thememanager.utils.DatabaseUtilities;
 import com.tmobile.thememanager.utils.FileUtilities;
 import com.tmobile.thememanager.utils.ThemeUtilities;
@@ -34,8 +35,8 @@ import android.content.IntentFilter;
 import android.content.UriMatcher;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
-import android.content.pm.ThemeInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.pm.ThemeInfo;
 import android.content.res.CustomTheme;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -140,10 +141,8 @@ public class ThemesProvider extends ContentProvider {
             db.execSQL("CREATE INDEX themeitem_map_package ON themeitem_map (theme_package)");
             db.execSQL("CREATE UNIQUE INDEX themeitem_map_key ON themeitem_map (theme_package, theme_id)");
 
-            String ringtoneName = "T-Jingle";
-            Uri ringtoneUri = getInternalRingtone(ringtoneName, Audio.Media.IS_RINGTONE);
-            String notificationName = "Color";
-            Uri notificationUri = getInternalRingtone(notificationName, Audio.Media.IS_NOTIFICATION);
+            SystemThemeMeta systemTheme = SystemThemeMeta.inflate(mContext.getResources(),
+                    R.xml.system_theme);
 
             /*
              * NOTE: We set IS_APPLIED=1 optimistically here. We don't actually
@@ -170,12 +169,12 @@ public class ThemesProvider extends ContentProvider {
                     ThemeColumns.NOTIFICATION_RINGTONE_URI + ", " +
                     ThemeColumns.PREVIEW_URI +
                     ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    new Object[] { "", "", 1, "T-Mobile", 1, "Safari", "Onyx",
-                    "Safari", "file:///system/customize/resource/wallpaper.jpg",
-                    "Safari (Lockscreen)", "file:///system/customize/resource/htc_wallpaper_01_lockscreen.jpg",
-                    ringtoneName, Audio.keyFor(ringtoneName), ringtoneUri,
-                    notificationName, Audio.keyFor(notificationName), notificationUri,
-                    "file:///system/customize/resource/preview.png" } );
+                    new Object[] { "", "", 1, systemTheme.author, 1, systemTheme.name, systemTheme.styleName,
+                    systemTheme.wallpaperName, systemTheme.wallpaperUri,
+                    null, null, /* Lock wallpaper */
+                    null, null, null, /* Ringtone */
+                    null, null, null, /* Notification ringtone */
+                    systemTheme.previewUri } );
         }
 
         private void dropTables(SQLiteDatabase db) {
