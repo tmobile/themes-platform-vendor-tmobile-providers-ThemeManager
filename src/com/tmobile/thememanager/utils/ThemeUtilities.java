@@ -176,7 +176,7 @@ public class ThemeUtilities {
     public static CustomTheme getAppliedTheme(Context context) {
         ActivityManager am = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
         Configuration config = am.getConfiguration();
-        return (config.customTheme != null ? config.customTheme : CustomTheme.getDefault());
+        return (config.customTheme != null ? config.customTheme : CustomTheme.getBootTheme());
     }
 
     public static int compareTheme(ThemeItem item, PackageInfo pi, ThemeInfo ti) {

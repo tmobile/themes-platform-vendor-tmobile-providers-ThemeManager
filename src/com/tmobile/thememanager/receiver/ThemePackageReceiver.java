@@ -47,7 +47,7 @@ public class ThemePackageReceiver extends BroadcastReceiver {
             } else if (action.equals(Intent.ACTION_PACKAGE_REMOVED)) {
                 if (isThemeFromPackageApplied(context, pkg)) {
                     /* Switch us back to teh system default. */
-                    CustomTheme defaultTheme = CustomTheme.getDefault();
+                    CustomTheme defaultTheme = CustomTheme.getSystemTheme();
                     if (pkg.equals(defaultTheme.getThemePackageName())) {
                         Log.e(Constants.TAG, "Removed the system default theme?  This should not happen.");
                     } else {
