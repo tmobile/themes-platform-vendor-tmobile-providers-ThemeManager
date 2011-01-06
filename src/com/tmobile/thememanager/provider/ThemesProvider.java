@@ -27,7 +27,6 @@ import com.tmobile.themes.provider.Themes.ThemeColumns;
 
 import android.content.BroadcastReceiver;
 import android.content.ContentProvider;
-import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -97,21 +96,6 @@ public class ThemesProvider extends ContentProvider {
         public void onUpgrade(final SQLiteDatabase db, int oldVer, int newVer) {
             dropTables(db);
             createTables(db);
-        }
-
-        private Uri getInternalRingtone(String title, String typeCondition) {
-            Cursor cursor = mContext.getContentResolver().query(Audio.Media.INTERNAL_CONTENT_URI,
-                    new String[] { Audio.Media._ID },
-                    Audio.Media.TITLE + " = ? AND " + typeCondition + " = 1",
-                    new String[] { title }, null);
-            long id = DatabaseUtilities.cursorToResult(cursor, -1);
-            if (id >= 0) {
-                return ContentUris.withAppendedId(Audio.Media.INTERNAL_CONTENT_URI, id);
-            } else {
-                Log.e(Constants.TAG, "Failed to retrieve default ringtone '" + title + "'" +
-                        " (" + typeCondition + ")");
-                return null;
-            }
         }
 
         private void createTables(SQLiteDatabase db) {
