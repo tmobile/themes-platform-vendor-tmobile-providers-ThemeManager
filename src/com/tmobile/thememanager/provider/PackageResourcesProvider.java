@@ -183,6 +183,8 @@ public class PackageResourcesProvider extends ContentProvider {
                 }
                 try {
                     return packageRes.getAssets().openFd(assetPath);
+                } catch (FileNotFoundException e) {
+                    throw e;
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
