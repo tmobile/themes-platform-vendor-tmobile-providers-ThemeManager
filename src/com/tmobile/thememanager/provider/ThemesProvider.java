@@ -19,7 +19,6 @@ package com.tmobile.thememanager.provider;
 import com.tmobile.thememanager.Constants;
 import com.tmobile.thememanager.R;
 import com.tmobile.thememanager.utils.DatabaseUtilities;
-import com.tmobile.thememanager.utils.FileUtilities;
 import com.tmobile.thememanager.utils.ThemeUtilities;
 import com.tmobile.themes.provider.ThemeItem;
 import com.tmobile.themes.provider.Themes;
@@ -432,11 +431,11 @@ public class ThemesProvider extends ContentProvider {
         outValues.put(ThemeColumns.IS_DRM, ti.isDrmProtected ? 1 : 0);
         outValues.put(ThemeColumns.IS_SYSTEM,
                 ((pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) ? 1 : 0);
-        if (ti.wallpaperImageName != null) {
-            outValues.put(ThemeColumns.WALLPAPER_NAME,
-                    FileUtilities.basename(ti.wallpaperImageName));
+        if (ti.wallpaperResourceId != 0) {
+            /* XXX: wallpaper name is theme name for now. */
+            outValues.put(ThemeColumns.WALLPAPER_NAME, ti.name);
             outValues.put(ThemeColumns.WALLPAPER_URI,
-                    PackageResources.makeAssetPathUri(pi.packageName, ti.wallpaperImageName)
+                    PackageResources.makeResourceIdUri(pi.packageName, ti.wallpaperResourceId)
                         .toString());
         }
         if (ti.ringtoneFileName != null) {
@@ -453,14 +452,14 @@ public class ThemesProvider extends ContentProvider {
                     PackageResources.makeAssetPathUri(pi.packageName,
                             ti.notificationRingtoneFileName).toString());
         }
-        if (ti.thumbnail != null) {
+        if (ti.thumbnailResourceId != 0) {
             outValues.put(ThemeColumns.THUMBNAIL_URI,
-                    PackageResources.makeAssetPathUri(pi.packageName, ti.thumbnail)
+                    PackageResources.makeResourceIdUri(pi.packageName, ti.thumbnailResourceId)
                         .toString());
         }
-        if (ti.preview != null) {
+        if (ti.previewResourceId != 0) {
             outValues.put(ThemeColumns.PREVIEW_URI,
-                    PackageResources.makeAssetPathUri(pi.packageName, ti.preview)
+                    PackageResources.makeResourceIdUri(pi.packageName, ti.previewResourceId)
                         .toString());
         }
 
