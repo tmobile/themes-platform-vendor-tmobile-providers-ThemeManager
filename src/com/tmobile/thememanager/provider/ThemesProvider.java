@@ -37,16 +37,22 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ThemeInfo;
 import android.content.res.CustomTheme;
 import android.content.res.Resources;
+import android.content.res.Resources.NotFoundException;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Debug;
 import android.os.Handler;
 import android.os.Process;
 import android.provider.MediaStore.Audio;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,6 +63,8 @@ import java.util.List;
  * Provider
  */
 public class ThemesProvider extends ContentProvider {
+    private static final String TAG = ThemesProvider.class.getSimpleName();
+
     private static final UriMatcher URI_MATCHER = new UriMatcher(UriMatcher.NO_MATCH);
 
     private static final String TABLE_NAME = "themeitem_map";
@@ -74,7 +82,7 @@ public class ThemesProvider extends ContentProvider {
 
     private static class OpenDatabaseHelper extends SQLiteOpenHelper {
         private static final String DATABASE_NAME = "theme_item.db";
-        private static final int DATABASE_VERSION = 11;
+        private static final int DATABASE_VERSION = 12;
 
         private final Context mContext;
 
@@ -119,7 +127,9 @@ public class ThemesProvider extends ContentProvider {
                     ThemeColumns.NOTIFICATION_RINGTONE_NAME_KEY + " TEXT, " +
                     ThemeColumns.NOTIFICATION_RINGTONE_URI + " TEXT, " +
                     ThemeColumns.THUMBNAIL_URI + " TEXT, " +
-                    ThemeColumns.PREVIEW_URI + " TEXT" +
+                    ThemeColumns.PREVIEW_URI + " TEXT, " +
+                    ThemeColumns.HAS_HOST_DENSITY + " INTEGER DEFAULT 1, " +
+                    ThemeColumns.HAS_THEME_PACKAGE_SCOPE + " INTEGER DEFAULT 1" +
                     ")");
             db.execSQL("CREATE INDEX themeitem_map_package ON themeitem_map (theme_package)");
             db.execSQL("CREATE UNIQUE INDEX themeitem_map_key ON themeitem_map (theme_package, theme_id)");
@@ -419,6 +429,46 @@ public class ThemesProvider extends ContentProvider {
         return notifyChanges;
     }
 
+    private static boolean hasHostDensity(Context context, PackageInfo pi, ThemeInfo ti) {
+        try {
+            Resources res = context.getPackageManager().getResourcesForApplication(pi.packageName);
+
+            /*
+             * We don't need to actually read the bitmap, only look up the entry
+             * in the resources table and examine the density with which the
+             * AssetManager responded.
+             */
+            TypedValue outValue = new TypedValue();
+            res.getValue(ti.previewResourceId, outValue, true);
+            int density = (outValue.density == TypedValue.DENSITY_DEFAULT) ?
+                    DisplayMetrics.DENSITY_DEFAULT : outValue.density;
+            return density == res.getDisplayMetrics().densityDpi;
+        } catch (NotFoundException e) {
+            Log.w(TAG, "Missing required resource in package " + pi.packageName + ": " +
+                    e.getMessage());
+            return false;
+        } catch (NameNotFoundException e) {
+            Log.w(TAG, "Possible package manager race condition detected?", e);
+            return false;
+        }
+    }
+
+    private static boolean hasThemePackageScope(Context context, PackageInfo pi, ThemeInfo ti) {
+        if ((ti.previewResourceId >>> 24) == 0x0a) {
+            return true;
+        }
+        if ((ti.styleResourceId >>> 24) == 0x0a) {
+            return true;
+        }
+        if ((ti.wallpaperResourceId >>> 24) == 0x0a) {
+            return true;
+        }
+        if ((ti.thumbnailResourceId >>> 24) == 0x0a) {
+            return true;
+        }
+        return false;
+    }
+
     private static void populateContentValues(Context context, ContentValues outValues,
             PackageInfo pi, ThemeInfo ti, boolean isCurrentTheme) {
         outValues.put(ThemeColumns.IS_APPLIED, isCurrentTheme ? 1 : 0);
@@ -431,6 +481,8 @@ public class ThemesProvider extends ContentProvider {
         outValues.put(ThemeColumns.IS_DRM, ti.isDrmProtected ? 1 : 0);
         outValues.put(ThemeColumns.IS_SYSTEM,
                 ((pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) ? 1 : 0);
+        outValues.put(ThemeColumns.HAS_HOST_DENSITY, hasHostDensity(context, pi, ti) ? 1 : 0);
+        outValues.put(ThemeColumns.HAS_THEME_PACKAGE_SCOPE, hasThemePackageScope(context, pi, ti) ? 1 : 0);
         if (ti.wallpaperResourceId != 0) {
             /* XXX: wallpaper name is theme name for now. */
             outValues.put(ThemeColumns.WALLPAPER_NAME, ti.name);
