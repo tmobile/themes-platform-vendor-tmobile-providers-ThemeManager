@@ -431,7 +431,7 @@ public class ThemesProvider extends ContentProvider {
 
     private static boolean hasHostDensity(Context context, PackageInfo pi, ThemeInfo ti) {
         try {
-            Resources res = context.getPackageManager().getResourcesForApplication(pi.packageName);
+            Resources res = context.createPackageContext(pi.packageName, 0).getResources();
 
             /*
              * We don't need to actually read the bitmap, only look up the entry
