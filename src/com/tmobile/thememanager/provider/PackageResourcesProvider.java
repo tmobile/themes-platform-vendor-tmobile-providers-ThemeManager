@@ -19,10 +19,13 @@ package com.tmobile.thememanager.provider;
 import com.tmobile.thememanager.Constants;
 
 import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.UriMatcher;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -40,6 +43,7 @@ import android.view.WindowManager;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,13 +61,34 @@ public class PackageResourcesProvider extends ContentProvider {
     private static final int TYPE_ASSET_PATH = 2;
 
     /* Cache AssetManager objects to speed up ringtone manipulation. */
-    private static final Map<String, Resources> mResourcesTable =
-        new HashMap<String, Resources>();
+    private final Map<String, SoftReference<Resources>> mResourcesTable =
+        new HashMap<String, SoftReference<Resources>>();
 
     @Override
     public boolean onCreate() {
+        /*
+         * Detect package removal for the purpose of clearing the resource table
+         * cache. Even though it's a soft ref cache it is important to
+         * immediately clear on removal so that updated theme packages
+         * immediately reflect updated media assets.
+         */
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_PACKAGE_REPLACED);
+        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        filter.addCategory(Intent.CATEGORY_THEME_PACKAGE_INSTALLED_STATE_CHANGE);
+        filter.addDataScheme("package");
+        getContext().registerReceiver(mThemePackageReceiver, filter);
+
         return true;
     }
+
+    private final BroadcastReceiver mThemePackageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(final Context context, final Intent intent) {
+            String pkg = intent.getData().getSchemeSpecificPart();
+            deleteResourcesForTheme(pkg);
+        }
+    };
 
     private static AssetManager createAssetManager(String packageFileName,
             String packageLockedZipFile) {
@@ -75,49 +100,44 @@ public class PackageResourcesProvider extends ContentProvider {
         return assets;
     }
 
-    public static final synchronized Resources getResourcesForTheme(Context context,
-            String packageName) throws NameNotFoundException {
-        Resources r = mResourcesTable.get(packageName);
-        if (r != null) {
-            return r;
+    private synchronized Resources getResourcesForTheme(String packageName)
+            throws NameNotFoundException {
+        SoftReference<Resources> ref = mResourcesTable.get(packageName);
+        Resources res = ref != null ? ref.get() : null;
+        if (res != null) {
+            return res;
         }
 
-        PackageInfo pi = context.getPackageManager().getPackageInfo(packageName, 0);
+        PackageInfo pi = getContext().getPackageManager().getPackageInfo(packageName, 0);
         if (pi == null || pi.applicationInfo == null) {
             return null;
         }
 
-        return createResourcesForTheme(context, packageName,
+        return createResourcesForTheme(packageName,
                 pi.applicationInfo.publicSourceDir, pi.getLockedZipFilePath());
     }
 
-    public static final synchronized Resources getResourcesForTheme(Context context,
-            PackageInfo pi) {
-        Resources r = mResourcesTable.get(pi.packageName);
-        if (r != null) {
-            return r;
-        }
-        return createResourcesForTheme(context, pi.packageName,
-                pi.applicationInfo.publicSourceDir, pi.getLockedZipFilePath());
-    }
-
-    private static final synchronized Resources createResourcesForTheme(Context context,
-            String packageName, String packageFileName, String packageLockedZipFile) {
+    private synchronized Resources createResourcesForTheme(String packageName,
+            String packageFileName, String packageLockedZipFile) {
         AssetManager assets = createAssetManager(packageFileName, packageLockedZipFile);
 
         DisplayMetrics metrics = new DisplayMetrics();
-        WindowManager wm = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);
+        WindowManager wm = (WindowManager)getContext().getSystemService(Context.WINDOW_SERVICE);
         wm.getDefaultDisplay().getMetrics(metrics);
 
-        ActivityManager am = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
+        /*
+         * XXX: This code is suspicious. We should send in a null config object
+         * for these configuration-agnostic requests.
+         */
+        ActivityManager am = (ActivityManager)getContext().getSystemService(Context.ACTIVITY_SERVICE);
         Configuration config = am.getConfiguration();
         Resources r = new Resources(assets, metrics, config);
 
-        mResourcesTable.put(packageName, r);
+        mResourcesTable.put(packageName, new SoftReference<Resources>(r));
         return r;
     }
 
-    private static final synchronized void deleteResourcesForTheme(String packageName) {
+    private synchronized void deleteResourcesForTheme(String packageName) {
         mResourcesTable.remove(packageName);
     }
 
@@ -152,7 +172,7 @@ public class PackageResourcesProvider extends ContentProvider {
         String packageName = segments.get(0);
         Resources packageRes = null;
         try {
-            packageRes = getResourcesForTheme(getContext(), packageName);
+            packageRes = getResourcesForTheme(packageName);
         } catch (NameNotFoundException e) {
             throw new FileNotFoundException(e.toString());
         }

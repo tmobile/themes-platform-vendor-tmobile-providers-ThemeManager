@@ -41,11 +41,8 @@ import android.content.res.Resources.NotFoundException;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Debug;
 import android.os.Handler;
 import android.os.Process;
 import android.provider.MediaStore.Audio;
@@ -515,22 +512,26 @@ public class ThemesProvider extends ContentProvider {
                         .toString());
         }
 
-        /* Try to find theme attributes by convention, like HTC lock screen wallpaper. */
-        Resources themeRes = PackageResourcesProvider.getResourcesForTheme(context, pi);
+        try {
+            /* Try to find theme attributes by convention, like HTC lock screen wallpaper. */
+            Resources themeRes = context.createPackageContext(pi.packageName, 0).getResources();
 
-        int lockWallpaperResId =
-            themeRes.getIdentifier("com_htc_launcher_lockscreen_wallpaper", "drawable",
-                    pi.packageName);
-        if (lockWallpaperResId != 0) {
-            int nameId = themeRes.getIdentifier("com_htc_launcher_lockscreen_wallpaper_name",
-                    "string", pi.packageName);
-            if (nameId != 0) {
-                outValues.put(ThemeColumns.LOCK_WALLPAPER_NAME,
-                        themeRes.getString(nameId));
-            }
-            outValues.put(ThemeColumns.LOCK_WALLPAPER_URI,
-                    PackageResources.makeResourceIdUri(pi.packageName, lockWallpaperResId)
+            int lockWallpaperResId =
+                themeRes.getIdentifier("com_htc_launcher_lockscreen_wallpaper", "drawable",
+                        pi.packageName);
+            if (lockWallpaperResId != 0) {
+                int nameId = themeRes.getIdentifier("com_htc_launcher_lockscreen_wallpaper_name",
+                        "string", pi.packageName);
+                if (nameId != 0) {
+                    outValues.put(ThemeColumns.LOCK_WALLPAPER_NAME,
+                            themeRes.getString(nameId));
+                }
+                outValues.put(ThemeColumns.LOCK_WALLPAPER_URI,
+                        PackageResources.makeResourceIdUri(pi.packageName, lockWallpaperResId)
                         .toString());
+            }
+        } catch (NameNotFoundException e) {
+            // Unlikely-as-hell race condition.
         }
     }
 
