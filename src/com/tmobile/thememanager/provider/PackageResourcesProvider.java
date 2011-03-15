@@ -17,8 +17,8 @@
 package com.tmobile.thememanager.provider;
 
 import com.tmobile.thememanager.Constants;
+import com.tmobile.themes.provider.Themes;
 
-import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentProvider;
 import android.content.ContentUris;
@@ -37,6 +37,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.DrmStore;
+import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
@@ -60,9 +61,11 @@ public class PackageResourcesProvider extends ContentProvider {
     private static final int TYPE_RESOURCE_ENTRY = 1;
     private static final int TYPE_ASSET_PATH = 2;
 
+    private static final int DEFAULT_ORIENTATION = Configuration.ORIENTATION_PORTRAIT;
+
     /* Cache AssetManager objects to speed up ringtone manipulation. */
-    private final Map<String, SoftReference<Resources>> mResourcesTable =
-        new HashMap<String, SoftReference<Resources>>();
+    private final Map<PackageKey, SoftReference<Resources>> mResourcesTable =
+        new HashMap<PackageKey, SoftReference<Resources>>();
 
     @Override
     public boolean onCreate() {
@@ -100,9 +103,10 @@ public class PackageResourcesProvider extends ContentProvider {
         return assets;
     }
 
-    private synchronized Resources getResourcesForTheme(String packageName)
-            throws NameNotFoundException {
-        SoftReference<Resources> ref = mResourcesTable.get(packageName);
+    private synchronized Resources getResourcesForTheme(String packageName,
+            int orientation) throws NameNotFoundException {
+        final PackageKey key = new PackageKey(packageName, orientation);
+        SoftReference<Resources> ref = mResourcesTable.get(key);
         Resources res = ref != null ? ref.get() : null;
         if (res != null) {
             return res;
@@ -113,11 +117,11 @@ public class PackageResourcesProvider extends ContentProvider {
             return null;
         }
 
-        return createResourcesForTheme(packageName,
+        return createResourcesForTheme(key,
                 pi.applicationInfo.publicSourceDir, pi.getLockedZipFilePath());
     }
 
-    private synchronized Resources createResourcesForTheme(String packageName,
+    private synchronized Resources createResourcesForTheme(final PackageKey key,
             String packageFileName, String packageLockedZipFile) {
         AssetManager assets = createAssetManager(packageFileName, packageLockedZipFile);
 
@@ -125,20 +129,22 @@ public class PackageResourcesProvider extends ContentProvider {
         WindowManager wm = (WindowManager)getContext().getSystemService(Context.WINDOW_SERVICE);
         wm.getDefaultDisplay().getMetrics(metrics);
 
-        /*
-         * XXX: This code is suspicious. We should send in a null config object
-         * for these configuration-agnostic requests.
-         */
-        ActivityManager am = (ActivityManager)getContext().getSystemService(Context.ACTIVITY_SERVICE);
-        Configuration config = am.getConfiguration();
+        Configuration config = new Configuration();
+        config.orientation = key.orientation;
         Resources r = new Resources(assets, metrics, config);
 
-        mResourcesTable.put(packageName, new SoftReference<Resources>(r));
+        mResourcesTable.put(key, new SoftReference<Resources>(r));
         return r;
     }
 
     private synchronized void deleteResourcesForTheme(String packageName) {
-        mResourcesTable.remove(packageName);
+        // When a theme package is uninstalled, remove all cached
+        // resource packages with the theme's package name.
+        for (PackageKey key : mResourcesTable.keySet()) {
+            if (packageName.equals(key.packageName)) {
+                mResourcesTable.remove(key);
+            }
+        }
     }
 
     @Override
@@ -172,7 +178,8 @@ public class PackageResourcesProvider extends ContentProvider {
         String packageName = segments.get(0);
         Resources packageRes = null;
         try {
-            packageRes = getResourcesForTheme(packageName);
+            packageRes = getResourcesForTheme(packageName,
+                    getOrientation(uri));
         } catch (NameNotFoundException e) {
             throw new FileNotFoundException(e.toString());
         }
@@ -214,6 +221,15 @@ public class PackageResourcesProvider extends ContentProvider {
         }
     }
 
+    private int getOrientation(Uri uri) {
+        int orientation = DEFAULT_ORIENTATION;
+        String o = uri.getQueryParameter(Themes.KEY_ORIENTATION);
+        if (!TextUtils.isEmpty(o)) {
+            orientation = Integer.valueOf(o);
+        }
+        return orientation;
+    }
+
     @Override
     public String getType(Uri uri) {
         return null;
@@ -245,5 +261,31 @@ public class PackageResourcesProvider extends ContentProvider {
         URI_MATCHER.addURI(PackageResources.AUTHORITY, "*/res/#", TYPE_RESOURCE_ID);
         URI_MATCHER.addURI(PackageResources.AUTHORITY, "*/res/*/*", TYPE_RESOURCE_ENTRY);
         URI_MATCHER.addURI(PackageResources.AUTHORITY, "*/assets/*", TYPE_ASSET_PATH);
+    }
+
+    private class PackageKey {
+        public String packageName;
+        public int orientation;
+
+        public PackageKey(String packageName, int orientation) {
+            this.packageName = packageName;
+            this.orientation = orientation;
+        }
+
+        @Override public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof PackageKey)) {
+                return false;
+            }
+            PackageKey other = (PackageKey)obj;
+            return (orientation == other.orientation &&
+                    packageName.equals(other.packageName));
+        }
+
+        @Override public int hashCode() {
+            return 37*packageName.hashCode() + 421*orientation + 7789;
+        }
     }
 }
